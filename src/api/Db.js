@@ -1,6 +1,11 @@
 import request from '@/utils/request.js'
 
-//文章列表查询
-export const getTableDesignService = ()=>{
-   return  request.get('/tableDesign/getTableDesign',)
+//
+export const getTableDesignListService = ()=>{
+   return  request.get('/tableDesign/getTableDesignList',)
+}
+
+//
+export const getTableDesignService = (tableName)=>{    
+   return  request.get('/tableDesign/getTableDesign', {params: {tableName: tableName}})
 }
