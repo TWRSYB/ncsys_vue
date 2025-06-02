@@ -1,4 +1,17 @@
 <script setup>
+import { ref } from 'vue'
+const list_tableDesign = ref([])
+
+//回显文章分类
+import { getTableDesignService } from '@/api/Db.js'
+const getTableDesign = async () => {
+    let result = await getTableDesignService();
+
+    list_tableDesign.value = result.data;
+}
+
+getTableDesign()
+
 
 </script>
 <template>
@@ -7,12 +20,12 @@
             <div class="header">
                 <span>数据库管理</span>
                 <div class="extra">
-                    <el-button type="primary" @click="getUserList">刷新</el-button>
+                    <el-button type="primary" @click="getTableDesign">刷新</el-button>
                     <el-button type="primary" @click="visibleDrawer = true">新增表</el-button>
                 </div>
             </div>
         </template>
-        <el-table :data="userList" style="width: 100%">
+        <el-table :data="list_tableDesign" style="width: 100%">
             <el-table-column label="表类型" prop="userId"></el-table-column>
             <el-table-column label="表名" prop="loginCode"></el-table-column>
             <el-table-column label="注释" prop="loginPassword"> </el-table-column>
