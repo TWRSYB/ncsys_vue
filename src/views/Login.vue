@@ -23,6 +23,8 @@ const rules = {
 
 
 import { userLoginService } from '@/api/user.js'
+import { useRouter } from 'vue-router'
+const router = useRouter()
 
 const login = async () => {
 
@@ -34,9 +36,11 @@ const login = async () => {
     })
 
     if (valid) {
-        // //调用接口,完成登录
+        // 调用接口,完成登录
         let result = await userLoginService(formData_login.value);
         ElMessage.success(result.message || '登录成功')
+        // 跳转首页
+        router.push('/')
     }
 
 }

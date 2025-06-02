@@ -21,22 +21,22 @@ import {
     ArrowLeftBold,
 } from '@element-plus/icons-vue'
 
-const isCollapse = ref(true)
-const handleOpen = (key, keyPath) => {
-    console.log(key, keyPath)
-}
-const handleClose = (key, keyPath) => {
-    console.log(key, keyPath)
-}
+// 折叠导航栏
+const isCollapse = ref(false)
+// const handleOpen = (key, keyPath) => {
+//     console.log(key, keyPath)
+// }
+// const handleClose = (key, keyPath) => {
+//     console.log(key, keyPath)
+// }
+
 </script>
 
 <template>
     <el-container class="layout-container">
         <!-- 左侧菜单 -->
-        <div>
-            <div
-                style="background-color: #ffffff;height: 56px; align-items: center; display: flex; justify-content: center;">
-                <el-icon><ArrowRightBold /></el-icon>
+        <div class="div_left">
+            <div class="div_left_up">
                 <div v-if="isCollapse">
                     <el-tooltip class="box-item" effect="light" content="展开导航栏" placement="right">
                         <el-button :icon="ArrowRightBold" plain @click="isCollapse = false" />
@@ -47,33 +47,34 @@ const handleClose = (key, keyPath) => {
                 </div>
             </div>
 
-            <el-menu default-active="2" class="el-menu-vertical-demo" :collapse="isCollapse" @open="handleOpen"
-                @close="handleClose">
+            <el-menu default-active="2" class="el-menu-vertical-demo" :collapse="isCollapse" router>
 
-                <el-menu-item index="1">
-                    <el-icon><icon-menu /></el-icon>
-                    <template #title>Navigator Two</template>
-                </el-menu-item>
-                <el-sub-menu index="2">
+                <el-sub-menu index="1">
                     <template #title>
                         <el-icon>
-                            <location />
+                            <Platform />
                         </el-icon>
-                        <span>Navigator One</span>
+                        <span>系统设计</span>
                     </template>
-                    <el-menu-item-group>
-                        <template #title><span>Group One</span></template>
-                        <el-menu-item index="1-1">item one</el-menu-item>
-                        <el-menu-item index="1-2">item two</el-menu-item>
+                    <el-menu-item index="/sys/UserManage">用户管理</el-menu-item>
+                    <el-menu-item index="/sys/DbDesign">数据库设计</el-menu-item>
+                    <!-- <el-menu-item-group title="功能分组1">
+                        <template #title><span>系统设计</span></template>
                     </el-menu-item-group>
-                    <el-menu-item-group title="Group Two">
+                    <el-menu-item-group title="功能分组2">
                         <el-menu-item index="1-3">item three</el-menu-item>
                     </el-menu-item-group>
                     <el-sub-menu index="1-4">
                         <template #title><span>item four</span></template>
                         <el-menu-item index="1-4-1">item one</el-menu-item>
-                    </el-sub-menu>
+                    </el-sub-menu> -->
                 </el-sub-menu>
+
+                <el-menu-item index="2">
+                    <el-icon><icon-menu /></el-icon>
+                    <template #title>Navigator Two</template>
+                </el-menu-item>
+
 
                 <el-menu-item index="3" disabled>
                     <el-icon>
@@ -115,9 +116,7 @@ const handleClose = (key, keyPath) => {
             </el-header>
             <!-- 中间区域 -->
             <el-main>
-                <div style="width: 1290px; height: 570px;border: 1px solid red;">
-                    内容展示区
-                </div>
+                <router-view></router-view>
             </el-main>
             <!-- 底部区域 -->
             <el-footer>大事件 ©2023 Created by 黑马程序员</el-footer>
@@ -126,13 +125,27 @@ const handleClose = (key, keyPath) => {
 </template>
 
 <style lang="scss" scoped>
-.el-menu-vertical-demo:not(.el-menu--collapse) {
-    width: 200px;
-    min-height: 400px;
-}
-
 .layout-container {
     height: 100vh;
+
+    .div_left {
+        display: flex;
+        flex-direction: column;
+
+        .div_left_up {
+            background-color: #ffffff;
+            height: 56px;
+            align-items: center;
+            display: flex;
+            justify-content: center;
+            border-right: 1px solid var(--el-menu-border-color);
+        }
+
+        .el-menu-vertical-demo {
+            height: 100%;
+        }
+    }
+
 
     .el-header {
         background-color: #fff;
