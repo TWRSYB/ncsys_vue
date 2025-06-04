@@ -9,3 +9,8 @@ export const getTableDesignListService = ()=>{
 export const getTableDesignService = (tableName)=>{    
    return  request.get('/tableDesign/getTableDesign', {params: {tableName: tableName}})
 }
+
+//
+export const saveTableDesignService = (mixedTableDesign)=>{    
+   return  request.post('/tableDesign/saveTableDesign', mixedTableDesign)
+}
