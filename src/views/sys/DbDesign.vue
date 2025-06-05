@@ -297,7 +297,7 @@ const VIT_notExist = () => [
             <el-form ref="form_addTable" :model="mixedTableDesign" label-width="100px" :rules="rules">
                 <el-form-item class="itemOne" label="表分类" prop="tableType">
                     <el-radio-group v-model="mixedTableDesign.tableType">
-                        <el-radio-button v-for="(value, key, index) in option_tableType" :label="key" :key="key">
+                        <el-radio-button v-for="(value, key, index) in option_tableType" :value="key" :key="key">
                             {{ value }}
                         </el-radio-button>
                     </el-radio-group>
