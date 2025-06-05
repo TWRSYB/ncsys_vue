@@ -96,20 +96,20 @@ const form_addTable = ref(null);
 //定义表单校验规则
 const rules = {
     tableType: [
-        { required: true, message: '请选择表类型', trigger: 'blur' }
+        { required: true, message: '请选择表类型', trigger: 'change' }
     ],
     sub_tableName: [
-        { required: true, message: '请输入表名', trigger: 'blur' },
+        { required: true, message: '请输入表名', trigger: 'change' },
         { min: 5, max: 40, message: '长度为5~40位单词下划线拼接', trigger: 'change' }
     ],
     tableComment: [
-        { required: true, message: '请输入表注释', trigger: 'blur' }
+        { required: true, message: '请输入表注释', trigger: 'change' }
     ]
 }
 
 
 const option_tableType = { "s": "系统表(system)", "t": "交易表(trade)", "l": "日志表(log)", "m": "主数据表(main)", "ts": "交易子表(tradesub)" }
-const option_fieldType = ["varchar", "char", "int", "timestamp", "TEXT", "BLOB"]
+const option_fieldType = ["varchar", "char", "int", "timestamp", "TEXT", "BLOB", "JSON"]
 
 
 
@@ -132,19 +132,14 @@ watch([() => mixedTableDesign.value.tableType, () => mixedTableDesign.value.sub_
 
 const handleBlur = (event) => {
     const nativeInput = event.target; // 直接从事件对象获取DOM元素
-    console.log(nativeInput);
     // 1. 直接修改DOM值
     nativeInput.value = nativeInput.value.replace(/_+$/g, '');
-
     // 2. 强制触发input事件保持响应式同步
     nativeInput.dispatchEvent(new Event('input'));
-
-    // // 使用正则表达式匹配并移除末尾的下划线
-    // mixedTableDesign.value.formData_tableDesign.sub_tableName = mixedTableDesign.value.formData_tableDesign.sub_tableName.replace(/_+$/g, '');
 };
 
 
-//添加地区
+//添加列
 const addColumn = () => {
     mixedTableDesign.value.list_tableDesignColumn.push(
         {
@@ -155,11 +150,25 @@ const addColumn = () => {
             fieldType: '',
             fieldLength: '',
             fieldEnumArray: [],
-            addingEnum: false,
             tempEnum: '',
-            editingIndex: ''
+            editingIndex: '',
+            needLength: false,
+            canEnum: false
         },
     );
+}
+
+//修改列类型事件(控制长度的输入)
+const fieldTypeChange = (row, val) => {
+    if (["varchar", "char"].includes(val)) {
+        row.needLength = true;
+        row.canEnum = true;
+    } else {
+        row.needLength = false;
+        row.canEnum = false;
+    }
+    row.fieldLength = ''
+    row.fieldEnumArray = []
 }
 
 //删除枚举
@@ -168,14 +177,6 @@ const deleteColumn = (row, index) => {
 }
 
 
-// 枚举输入完成
-const handleInputConfirm = (row) => {
-    if (row.tempEnum) {
-        row.fieldEnumArray.push(row.tempEnum)
-    }
-    row.addingEnum = false
-    row.tempEnum = ''
-}
 
 // // 删除枚举
 // const handleClose = (row, tag) => {
@@ -257,6 +258,40 @@ const confirm_Enum = (row, tag, index) => {
     row.tempEnum = ''
 }
 
+// 定义可复用的校验函数（接收额外参数）
+const VIT_required = (param) => {
+    return (rule, value, callback) => {
+        if (!param) {
+            callback(new Error());
+        } else {
+            callback();
+        }
+    };
+};
+
+const VIT_required2 = (param) => [
+    {
+        validator: (rule, value, callback) => {
+            if (!param) {
+                callback(new Error());
+            } else {
+                callback();
+            }
+        }
+    }
+]
+
+
+
+
+const VIT_notExist = () => [
+    {
+        validator: (rule, value, callback) => {
+            callback(new Error());
+        }
+    }
+]
+
 </script>
 <template>
     <el-card class="page-container">
@@ -308,119 +343,147 @@ const confirm_Enum = (row, tag, index) => {
                     <el-input v-model="mixedTableDesign.tableComment" placeholder="长度不超过40个字符"
                         v-input-filter="{ maxLength: 40, notAlloweList: [' '] }"></el-input>
                 </el-form-item>
+                <!-- 数据 -->
+                <el-table :data="mixedTableDesign.list_tableDesignColumn" table-layout="auto">
+                    <el-table-column label="序号" prop="fieldIndex" width="55" align="center"></el-table-column>
+                    <el-table-column prop="data_status" label="状态" align="center">
+                        <template #default="{ row }">
+                            <span v-if="mixedTableDesign.data_status == '0'">待建表</span>
+                            <span v-else-if="row.dataStatus == '0'">新增中</span>
+                            <span v-else-if="row.dataStatus == '1'">正常</span>
+                            <!-- <span v-else-if="row.dataStatus == '2'">禁用</span> -->
+                            <span v-else-if="row.dataStatus == '3'">编辑中</span>
+                            <!-- <span v-else-if="row.dataStatus == '9'">废弃</span> -->
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="列名" prop="columnName" align="center">
+                        <template #default="{ row }">
+                            <el-form-item v-if="mixedTableDesign.data_status == '0' || row.dataStatus != 1"
+                                prop="columnName" :rules="VIT_required2(row.columnName)">
+                            <!-- <el-form-item v-if="mixedTableDesign.data_status == '0' || row.dataStatus != 1"
+                                prop="columnName" :rules="[
+                                    { validator: VIT_required(row.columnName), trigger: 'change' }
+                                ]"> -->
+                                <el-input v-model="row.columnName" @blur="handleBlur" v-input-filter="{
+                                    regex: /[^0-9a-zA-Z_]/g,
+                                    maxLength: 40, upOrLower: 'lower',
+                                    otherMothed: (value) => value.replace(/^[_0-9]+/, '').replace('__', '_')
+                                }">
+                                </el-input>
+                            </el-form-item>
+                            <span v-else>{{ row.columnName }}</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="列注释" prop="columnComment" align="center">
+                        <template #default="{ row }">
+                            <el-form-item v-if="mixedTableDesign.data_status == '0' || row.dataStatus != 1"
+                                prop="columnComment" :rules="[
+                                    { validator: VIT_required(row.columnComment), trigger: 'change' }
+                                ]">
+                                <el-input v-model="row.columnComment"
+                                    v-input-filter="{ maxLength: 40, notAlloweList: [' ', ':', ','] }">
+                                </el-input>
+                            </el-form-item>
+                            <span v-else>{{ row.columnComment }}</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="字段类型" prop="fieldType" width="140" align="center">
+                        <template #default="{ row }">
+                            <el-form-item v-if="mixedTableDesign.data_status == '0' || row.dataStatus != 1"
+                                prop="fieldType" :rules="[
+                                    { validator: VIT_required(row.fieldType), trigger: 'change' }
+                                ]">
+                                <el-select v-model="row.fieldType" placeholder="请选择字段类型"
+                                    @change="(val) => fieldTypeChange(row, val)">
+                                    <el-option v-for="(key, index) in option_fieldType" :key="key" :label="key"
+                                        :value="key" />
+                                </el-select>
+                            </el-form-item>
+                            <span v-else>{{ row.fieldType }}</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="字段长度" prop="fieldLength" width="90" align="center">
+                        <template #default="{ row }">
+                            <el-form-item
+                                v-if="(mixedTableDesign.data_status == '0' || row.dataStatus != 1) && row.needLength"
+                                prop="fieldLength" :rules="[
+                                    { validator: VIT_required(row.fieldLength), trigger: 'change' }
+                                ]">
+                                <el-input v-model="row.fieldLength"
+                                    v-input-filter="{ regex: /[^0-9]/g, maxLength: 4, otherMothed: (value) => value.replace(/^0+/, '') }">
+                                </el-input>
+                            </el-form-item>
+
+                            <span v-else>{{ row.fieldLength }}</span>
+                        </template>
+                    </el-table-column>
+
+                    <el-table-column label="字段枚举" prop="fieldEnumArray" align="center">
+                        <template #default="{ row }">
+                            <template
+                                v-if="(mixedTableDesign.data_status == '0' || row.dataStatus != 1) && row.canEnum">
+                                <!-- closable @close="handleClose(row, tag)" -->
+                                <el-tag v-for="(tag, index) in row.fieldEnumArray" :key="index"
+                                    @dblclick="editEnum(row, tag, index)">
+                                    <template v-if="row.editingIndex === index">
+                                        <div style="display: flex;align-items: center;margin: 0 -7px;">
+                                            <el-form-item prop="tempEnum" :rules="VIT_notExist()">
+                                                <!-- <el-form-item prop="tempEnum" :rules="[
+                                                { validator: VIT_notExist(row.tempEnum), trigger: 'blur' }
+                                            ]"> -->
+                                                <el-input style="width: 100px;" v-model="row.tempEnum" size="small"
+                                                    v-input-filter="{
+                                                        maxLength: 30,
+                                                        notAlloweList: [' ', ',', ';', ':'],
+                                                        otherMothed: (value) => value.replace(/^-+/, '').replace('--', '-')
+                                                    }" />
+                                            </el-form-item>
+
+                                            <el-icon color="#f56c6c" style="margin: 0 3px;"
+                                                @click="delete_Enum(row, tag, index)">
+                                                <Delete />
+                                            </el-icon>
+                                            <el-icon color="#67c23a" style="margin: 0 3px;"
+                                                @click="confirm_Enum(row, tag, index)">
+                                                <Select />
+                                            </el-icon>
+                                        </div>
+                                    </template>
+
+                                    <span v-else>{{ tag }}</span>
+                                </el-tag>
+                                <el-button v-if="row.editingIndex === ''" :icon="Plus" @click="addEnum(row)" text
+                                    type="primary"></el-button>
+                            </template>
+                            <el-tag v-else v-for="(tag, index) in row.fieldEnumArray" :key="index">
+                                {{ tag }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" align="center">
+                        <template #default="scope">
+                            <template v-if="mixedTableDesign.data_status == '0'">
+                                <el-button @click="deleteColumn(scope.row, scope.$index)" type="info" size="small"
+                                    plain>删除</el-button>
+                            </template>
+                            <template v-else>
+                                <el-button @click="submitAddArea(scope.row, scope.$index)" v-if="scope.row.status == 0"
+                                    type="primary" size="small">提交新增</el-button>
+
+                                <el-button @click="modifyArea(scope.row, scope.$index)" v-if="scope.row.status == 1"
+                                    size="small">修改</el-button>
+                                <el-button @click="submitModifyArea(scope.row, scope.$index)"
+                                    v-if="scope.row.status == 2" type="primary" size="small">提交修改</el-button>
+
+                                <el-button @click="areaCannel(scope.row, scope.$index)" v-if="scope.row.status != 1"
+                                    size="small">取消</el-button>
+                            </template>
+                        </template>
+                    </el-table-column>
+                </el-table>
             </el-form>
 
-            <!-- 数据 -->
-            <el-table :data="mixedTableDesign.list_tableDesignColumn" table-layout="auto">
-                <el-table-column label="序号" prop="fieldIndex" width="55" align="center"></el-table-column>
-                <el-table-column prop="data_status" label="状态" align="center">
-                    <template #default="{ row }">
-                        <span v-if="mixedTableDesign.data_status == '0'">待建表</span>
-                        <span v-else-if="row.dataStatus == '0'">新增中</span>
-                        <span v-else-if="row.dataStatus == '1'">正常</span>
-                        <!-- <span v-else-if="row.dataStatus == '2'">禁用</span> -->
-                        <span v-else-if="row.dataStatus == '3'">编辑中</span>
-                        <!-- <span v-else-if="row.dataStatus == '9'">废弃</span> -->
-                    </template>
-                </el-table-column>
-                <!-- <el-table-column label="表名" prop="tableName">
-                    {{ mixedTableDesign.formData_tableDesign.tableName }}
-                </el-table-column> -->
-                <el-table-column label="列名" prop="columnName" align="center">
-                    <template #default="{ row }">
-                        <el-input v-model="row.columnName"
-                            v-if="mixedTableDesign.data_status == '0' || row.dataStatus != 1"
-                            placeholder="多个英文单词使用下划线拼接,长度不超过40个字符"
-                            v-input-filter="{ regex: /[^0-9a-zA-Z_]/g, maxLength: 40, upOrLower: 'lower', otherMothed: (value) => value.replace(/^_+/, '').replace('__', '_') }"
-                            @blur="handleBlur">
-                        </el-input>
-                        <span v-else>{{ row.columnName }}</span>
-                    </template>
-                </el-table-column>
-                <el-table-column label="列注释" prop="columnComment" align="center">
-                    <template #default="{ row }">
-                        <el-input v-model="row.columnComment"
-                            v-if="mixedTableDesign.data_status == '0' || row.dataStatus != 1" placeholder="长度不超过40个字符"
-                            v-input-filter="{ maxLength: 40, notAlloweList: [' ', ':'] }">
-                        </el-input>
-                        <span v-else>{{ row.columnComment }}</span>
-                    </template>
-                </el-table-column>
-                <el-table-column label="字段类型" prop="fieldType" align="center">
-                    <template #default="{ row }">
-                        <el-select v-model="row.fieldType"
-                            v-if="mixedTableDesign.data_status == '0' || row.dataStatus != 1" placeholder="请选择字段类型">
-                            <el-option v-for="(key, index) in option_fieldType" :key="key" :label="key" value="key" />
-                        </el-select>
-                        <span v-else>{{ row.fieldType }}</span>
-                    </template>
-                </el-table-column>
-                <el-table-column label="字段长度" prop="fieldLength" align="center">
-                    <template #default="{ row }">
-                        <el-input-number v-model="row.fieldLength"
-                            v-if="mixedTableDesign.data_status == '0' || row.dataStatus != 1" />
-                        <span v-else>{{ row.fieldLength }}</span>
-                    </template>
-                </el-table-column>
 
-                <el-table-column label="字段枚举" prop="fieldEnumArray" align="center">
-                    <template #default="{ row }">
-                        <template v-if="mixedTableDesign.data_status == '0' || row.dataStatus != 1">
-                            <!-- closable @close="handleClose(row, tag)" -->
-                            <el-tag v-for="(tag, index) in row.fieldEnumArray" :key="index"
-                                @dblclick="editEnum(row, tag, index)">
-                                <template v-if="row.editingIndex === index">
-                                    <div style="display: flex;align-items: center;margin: 0 -7px;">
-                                        <el-input style="width: 100px;" v-model="row.tempEnum" size="small"
-                                            v-input-filter="{
-                                                maxLength: 30,
-                                                notAlloweList: [' ', ',', ';', ':'],
-                                                otherMothed: (value) => value.replace(/^-+/, '').replace('--', '-')
-                                            }" />
-                                        <el-icon color="#f56c6c" style="margin: 0 3px;"
-                                            @click="delete_Enum(row, tag, index)">
-                                            <Delete />
-                                        </el-icon>
-                                        <el-icon color="#67c23a" style="margin: 0 3px;"
-                                            @click="confirm_Enum(row, tag, index)">
-                                            <Select />
-                                        </el-icon>
-                                    </div>
-                                </template>
-
-                                <span v-else>{{ tag }}</span>
-                            </el-tag>
-                            <!-- <el-input v-if="row.addingEnum" ref="InputRef" v-model="row.tempEnum" style="width: 100px;"
-                                size="small" @keyup.enter="handleInputConfirm(row)" @blur="handleInputConfirm(row)" /> -->
-                            <el-button v-if="row.editingIndex === ''" :icon="Plus" @click="addEnum(row)" text
-                                type="primary"></el-button>
-                        </template>
-                        <el-tag v-else v-for="(tag, index) in row.fieldEnumArray" :key="index">
-                            {{ tag }}
-                        </el-tag>
-                    </template>
-                </el-table-column>
-                <el-table-column label="操作" width="200">
-                    <template #default="scope">
-                        <template v-if="mixedTableDesign.data_status == '0'">
-                            <el-button @click="deleteColumn(scope.row, scope.$index)" type="info" size="small"
-                                plain>删除</el-button>
-                        </template>
-                        <template v-else>
-                            <el-button @click="submitAddArea(scope.row, scope.$index)" v-if="scope.row.status == 0"
-                                type="primary" size="small">提交新增</el-button>
-
-                            <el-button @click="modifyArea(scope.row, scope.$index)" v-if="scope.row.status == 1"
-                                size="small">修改</el-button>
-                            <el-button @click="submitModifyArea(scope.row, scope.$index)" v-if="scope.row.status == 2"
-                                type="primary" size="small">提交修改</el-button>
-
-                            <el-button @click="areaCannel(scope.row, scope.$index)" v-if="scope.row.status != 1"
-                                size="small">取消</el-button>
-                        </template>
-                    </template>
-                </el-table-column>
-            </el-table>
 
 
             <el-button type="primary" @click="addColumn()">添加字段</el-button>
@@ -460,4 +523,24 @@ const confirm_Enum = (row, tag, index) => {
         justify-content: space-between;
     }
 }
+
+/* 穿透 scoped 作用域，直接修改子组件样式 */
+.el-table {
+    ::v-deep .el-form-item__content {
+        margin-left: 0 !important;
+    }
+
+    .el-form-item {
+        display: flex;
+        --font-size: 14px;
+        margin-bottom: 0;
+    }
+}
 </style>
+
+<!-- <style scoped>
+/* 穿透 scoped 作用域，直接修改子组件样式 */
+.el-table ::v-deep .el-form-item__content {
+  margin-left: 0 !important;
+}
+</style> -->
