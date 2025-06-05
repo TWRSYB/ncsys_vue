@@ -120,16 +120,6 @@ watch([() => mixedTableDesign.value.tableType, () => mixedTableDesign.value.sub_
     mixedTableDesign.value.tableName = pre_tableName + sub
 }, { immediate: true })
 
-// const handleInput = (value) => {
-//     console.log(value)
-//     // 使用正则表达式过滤非字母和非下划线字符
-//     const filteredValue = value.replace(/^_+/, '').replace(/[^0-9a-zA-Z_]/g, '').replace('__', '_').toLowerCase();
-//     if (filteredValue !== value) {
-//         // 仅当内容被修改时更新（避免循环触发）
-//         formData_tableDesign.value.sub_tableName = filteredValue;
-//     }
-// };
-
 const handleBlur = (event) => {
     const nativeInput = event.target; // 直接从事件对象获取DOM元素
     // 1. 直接修改DOM值
@@ -175,13 +165,6 @@ const fieldTypeChange = (row, val) => {
 const deleteColumn = (row, index) => {
     mixedTableDesign.value.list_tableDesignColumn.splice(index, 1)
 }
-
-
-
-// // 删除枚举
-// const handleClose = (row, tag) => {
-//     row.fieldEnum.splice(row.fieldEnum.indexOf(tag), 1)
-// }
 
 //添加枚举
 const addEnum = (row) => {
@@ -259,17 +242,7 @@ const confirm_Enum = (row, tag, index) => {
 }
 
 // 定义可复用的校验函数（接收额外参数）
-const VIT_required = (param) => {
-    return (rule, value, callback) => {
-        if (!param) {
-            callback(new Error());
-        } else {
-            callback();
-        }
-    };
-};
-
-const VIT_required2 = (param) => [
+const VIT_required = (param) => [
     {
         validator: (rule, value, callback) => {
             if (!param) {
@@ -280,9 +253,6 @@ const VIT_required2 = (param) => [
         }
     }
 ]
-
-
-
 
 const VIT_notExist = () => [
     {
@@ -359,11 +329,7 @@ const VIT_notExist = () => [
                     <el-table-column label="列名" prop="columnName" align="center">
                         <template #default="{ row }">
                             <el-form-item v-if="mixedTableDesign.data_status == '0' || row.dataStatus != 1"
-                                prop="columnName" :rules="VIT_required2(row.columnName)">
-                            <!-- <el-form-item v-if="mixedTableDesign.data_status == '0' || row.dataStatus != 1"
-                                prop="columnName" :rules="[
-                                    { validator: VIT_required(row.columnName), trigger: 'change' }
-                                ]"> -->
+                                prop="columnName" :rules="VIT_required(row.columnName)">
                                 <el-input v-model="row.columnName" @blur="handleBlur" v-input-filter="{
                                     regex: /[^0-9a-zA-Z_]/g,
                                     maxLength: 40, upOrLower: 'lower',
@@ -377,9 +343,7 @@ const VIT_notExist = () => [
                     <el-table-column label="列注释" prop="columnComment" align="center">
                         <template #default="{ row }">
                             <el-form-item v-if="mixedTableDesign.data_status == '0' || row.dataStatus != 1"
-                                prop="columnComment" :rules="[
-                                    { validator: VIT_required(row.columnComment), trigger: 'change' }
-                                ]">
+                                prop="columnComment" :rules="VIT_required(row.columnComment)">
                                 <el-input v-model="row.columnComment"
                                     v-input-filter="{ maxLength: 40, notAlloweList: [' ', ':', ','] }">
                                 </el-input>
@@ -390,9 +354,7 @@ const VIT_notExist = () => [
                     <el-table-column label="字段类型" prop="fieldType" width="140" align="center">
                         <template #default="{ row }">
                             <el-form-item v-if="mixedTableDesign.data_status == '0' || row.dataStatus != 1"
-                                prop="fieldType" :rules="[
-                                    { validator: VIT_required(row.fieldType), trigger: 'change' }
-                                ]">
+                                prop="fieldType" :rules="VIT_required(row.fieldType)">
                                 <el-select v-model="row.fieldType" placeholder="请选择字段类型"
                                     @change="(val) => fieldTypeChange(row, val)">
                                     <el-option v-for="(key, index) in option_fieldType" :key="key" :label="key"
@@ -406,9 +368,7 @@ const VIT_notExist = () => [
                         <template #default="{ row }">
                             <el-form-item
                                 v-if="(mixedTableDesign.data_status == '0' || row.dataStatus != 1) && row.needLength"
-                                prop="fieldLength" :rules="[
-                                    { validator: VIT_required(row.fieldLength), trigger: 'change' }
-                                ]">
+                                prop="fieldLength" :rules="VIT_required(row.fieldLength)">
                                 <el-input v-model="row.fieldLength"
                                     v-input-filter="{ regex: /[^0-9]/g, maxLength: 4, otherMothed: (value) => value.replace(/^0+/, '') }">
                                 </el-input>
@@ -422,15 +382,11 @@ const VIT_notExist = () => [
                         <template #default="{ row }">
                             <template
                                 v-if="(mixedTableDesign.data_status == '0' || row.dataStatus != 1) && row.canEnum">
-                                <!-- closable @close="handleClose(row, tag)" -->
                                 <el-tag v-for="(tag, index) in row.fieldEnumArray" :key="index"
                                     @dblclick="editEnum(row, tag, index)">
                                     <template v-if="row.editingIndex === index">
                                         <div style="display: flex;align-items: center;margin: 0 -7px;">
                                             <el-form-item prop="tempEnum" :rules="VIT_notExist()">
-                                                <!-- <el-form-item prop="tempEnum" :rules="[
-                                                { validator: VIT_notExist(row.tempEnum), trigger: 'blur' }
-                                            ]"> -->
                                                 <el-input style="width: 100px;" v-model="row.tempEnum" size="small"
                                                     v-input-filter="{
                                                         maxLength: 30,
@@ -501,16 +457,6 @@ const VIT_notExist = () => [
             {{ mixedTableDesign }}
         </el-drawer>
     </el-card>
-    <!-- <el-dialog v-model="dialog_addEnum" title="编辑字段枚举" width="500">
-        <template #footer>
-            <div class="dialog-footer">
-                <el-button @click="dialogFormVisible = false">Cancel</el-button>
-                <el-button type="primary" @click="dialogFormVisible = false">
-                    Confirm
-                </el-button>
-            </div>
-        </template>
-    </el-dialog> -->
 </template>
 <style lang="scss" scoped>
 .page-container {
@@ -537,10 +483,3 @@ const VIT_notExist = () => [
     }
 }
 </style>
-
-<!-- <style scoped>
-/* 穿透 scoped 作用域，直接修改子组件样式 */
-.el-table ::v-deep .el-form-item__content {
-  margin-left: 0 !important;
-}
-</style> -->
