@@ -112,6 +112,7 @@ const rules = {
 
 const option_tableType = { "s": "系统表(system)", "t": "交易表(trade)", "l": "日志表(log)", "m": "主数据表(main)", "ts": "交易子表(tradesub)" }
 const option_fieldType = ["varchar", "char", "int", "timestamp", "TEXT", "BLOB", "JSON"]
+const option_YN = { "Y": "是", "N": "否" }
 
 
 
@@ -139,6 +140,7 @@ const addColumn = () => {
             fieldIndex: '',
             columnName: '',
             columnComment: '',
+            keyYn: 'N',
             fieldType: '',
             fieldLength: '',
             fieldEnumArray: [],
@@ -359,6 +361,18 @@ const VIT_notExist = () => [
                                 </el-input>
                             </el-form-item>
                             <span v-else>{{ row.columnComment }}</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="是否主键" prop="keyYn" width="140" align="center">
+                        <template #default="{ row }">
+                            <el-form-item v-if="mixedTableDesign.data_status == '0' || row.dataStatus != 1"
+                                prop="keyYn" :rules="VIT_required(row.keyYn)">
+                                <el-select v-model="row.keyYn">
+                                    <el-option v-for="(value, key, index) in option_YN" :key="key" :label="value"
+                                        :value="key" />
+                                </el-select>
+                            </el-form-item>
+                            <span v-else>{{ row.keyYn }}</span>
                         </template>
                     </el-table-column>
                     <el-table-column label="字段类型" prop="fieldType" width="140" align="center">
