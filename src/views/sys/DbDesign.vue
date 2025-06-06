@@ -2,6 +2,7 @@
 import { ref, watch, nextTick, toRaw } from 'vue'
 import {
     Edit,
+    Close,
     Plus,
     Delete,
     Select
@@ -86,7 +87,8 @@ const saveTableDesignSubmit = async () => {
         let result = await saveTableDesignService(mixedTableDesign.value);
         ElMessage.success(result.message || '登录成功')
         // 跳转首页
-        router.push('/')
+        visibleDrawer.value = false
+        getTableDesignList()
     }
 }
 
@@ -180,6 +182,14 @@ const editEnum = (row, tag, index) => {
 const delete_Enum = (row, tag, index) => {
     row.editingIndex = ''
     row.fieldEnumArray.splice(index, 1)
+    row.tempEnum = ''
+}
+//取消修改枚举
+const cancelModify_Enum = (row, tag, index) => {
+    if (!tag) {
+        row.fieldEnumArray.splice(index, 1)
+    }
+    row.editingIndex = ''
     row.tempEnum = ''
 }
 //确认枚举
@@ -395,13 +405,18 @@ const VIT_notExist = () => [
                                                     }" />
                                             </el-form-item>
 
-                                            <el-icon color="#f56c6c" style="margin: 0 3px;"
-                                                @click="delete_Enum(row, tag, index)">
-                                                <Delete />
-                                            </el-icon>
+
                                             <el-icon color="#67c23a" style="margin: 0 3px;"
                                                 @click="confirm_Enum(row, tag, index)">
                                                 <Select />
+                                            </el-icon>
+                                            <el-icon color="#909399" style="margin: 0 3px;"
+                                                @click="cancelModify_Enum(row, tag, index)">
+                                                <Close />
+                                            </el-icon>
+                                            <el-icon color="#f56c6c" style="margin: 0 3px;"
+                                                @click="delete_Enum(row, tag, index)">
+                                                <Delete />
                                             </el-icon>
                                         </div>
                                     </template>
