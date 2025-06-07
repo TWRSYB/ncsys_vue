@@ -239,6 +239,7 @@ const addColumn = () => {
             columnName: '',
             columnComment: '',
             keyYn: 'N',
+            nullAbleYn: 'N',
             fieldType: '',
             fieldLength: '',
             fieldEnumArray: [],
@@ -261,6 +262,7 @@ const fieldTypeChange = (row, val) => {
     }
     row.fieldLength = ''
     row.fieldEnumArray = []
+    row.defaultValue = ''
 }
 
 //修改列是否主键事件(控制是否可控)
@@ -362,8 +364,8 @@ const confirm_Enum = (row, tag, index) => {
 }
 
 // 定义可复用的校验函数（接收额外参数）
-const VIT_required = (param) => [
-    {
+const VIT_required = (param) => {
+    return {
         validator: (rule, value, callback) => {
             if (!param) {
                 callback(new Error());
@@ -372,15 +374,15 @@ const VIT_required = (param) => [
             }
         }
     }
-]
+}
 
-const VIT_notExist = () => [
-    {
+const VIT_notExist = () => {
+    return {
         validator: (rule, value, callback) => {
             callback(new Error());
         }
     }
-]
+}
 
 </script>
 <template>
@@ -512,7 +514,7 @@ const VIT_notExist = () => [
                         <template #default="{ row }">
                             <el-form-item
                                 v-if="(mixedTableDesign.dataStatus == '0' || row.dataStatus != 1) && row.needLength"
-                                prop="fieldLength" :rules="VIT_required(row.fieldLength)">
+                                prop="fieldLength" :rules="[VIT_required(row.fieldLength)]">
                                 <el-input v-model="row.fieldLength"
                                     v-input-filter="{ regex: /[^0-9]/g, maxLength: 4, otherMothed: (value) => value.replace(/^0+/, '') }">
                                 </el-input>
@@ -529,7 +531,7 @@ const VIT_notExist = () => [
                                     @dblclick="editEnum(row, tag, index)">
                                     <template v-if="row.editingIndex === index">
                                         <div style="display: flex;align-items: center;margin: 0 -7px;">
-                                            <el-form-item prop="tempEnum" :rules="VIT_notExist()">
+                                            <el-form-item prop="tempEnum" :rules="[VIT_notExist()]">
                                                 <el-input style="width: 100px;" v-model="row.tempEnum" size="small"
                                                     v-input-filter="{
                                                         maxLength: 30,
@@ -564,6 +566,16 @@ const VIT_notExist = () => [
                             </el-tag>
                         </template>
                     </el-table-column>
+                    <!-- <el-table-column label="默认值" prop="defaultValue" width="90" align="center">
+                        <template #default="{ row }">
+                            <el-form-item v-if="mixedTableDesign.dataStatus == '0' || row.dataStatus != 1"
+                                prop="defaultValue">
+                                <el-input v-model="row.defaultValue">
+                                </el-input>
+                            </el-form-item>
+                            <span v-else>{{ row.defaultValue }}</span>
+                        </template>
+                    </el-table-column> -->
                     <el-table-column label="操作" align="center">
                         <template #default="scope">
                             <template v-if="mixedTableDesign.dataStatus == '0'">
@@ -587,15 +599,19 @@ const VIT_notExist = () => [
                 </el-table>
             </el-form>
 
+            <template #footer>
+                <div style="flex: auto">
+                    <el-button type="primary" @click="addColumn()">添加字段</el-button>
+                    <el-button type="primary" @click="SBM_saveTableDesign"
+                        v-if="mixedTableDesign.dataStatus == '0'">保存</el-button>
+                    <el-button type="primary" @click="SBM_createTableAndEntity"
+                        v-if="mixedTableDesign.dataStatus == '0'">创建表和实体类</el-button>
+                    <el-button type="primary" @click="SBM_createTableAndEntity('草稿')">查看最新建表语句</el-button>
+                </div>
+            </template>
 
 
 
-            <el-button type="primary" @click="addColumn()">添加字段</el-button>
-            <el-button type="primary" @click="SBM_saveTableDesign"
-                v-if="mixedTableDesign.dataStatus == '0'">保存</el-button>
-            <el-button type="primary" @click="SBM_createTableAndEntity"
-                v-if="mixedTableDesign.dataStatus == '0'">创建表和实体类</el-button>
-            <el-button type="primary" @click="SBM_createTableAndEntity('草稿')">查看最新建表语句</el-button>
 
             <br><br><br>
             {{ TD_TableDesignColumn }}
