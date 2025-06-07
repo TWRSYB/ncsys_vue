@@ -161,42 +161,31 @@ const SBM_createTableAndEntity = () => {
                 cancelButtonText: '取消',
                 type: 'warning',
             }
-        )
-            .then(() => {
-                ElMessage({
-                    type: 'success',
-                    message: 'Delete completed',
+        ).then(() => {
+            for (const tableDesignColumn of mixedTableDesign.value.list_tableDesignColumn) {
+                const fieldEnumArray = tableDesignColumn.fieldEnumArray
+                if (fieldEnumArray && fieldEnumArray.length) {
+                    tableDesignColumn.fieldEnum = JSON.stringify(fieldEnumArray)
+                } else {
+                    tableDesignColumn.fieldEnum = null
+                }
+            }
+
+            // 调用接口,完成登录
+            request.post('/tableDesign/createTableAndEntity', mixedTableDesign.value)
+                .then((response) => {
+
                 })
-            })
-            .catch(() => {
-                ElMessage({
-                    type: 'info',
-                    message: 'Delete canceled',
+                .catch((err) => {
+
                 })
-            })
+            ElMessage.success(result.message || '登录成功')
+            // 跳转首页
+            visibleDrawer.value = false
+            getTableDesignList()
+        })
     })
 
-
-
-
-    // if (valid) {
-
-    //     for (const tableDesignColumn of mixedTableDesign.value.list_tableDesignColumn) {
-    //         const fieldEnumArray = tableDesignColumn.fieldEnumArray
-    //         if (fieldEnumArray && fieldEnumArray.length) {
-    //             tableDesignColumn.fieldEnum = JSON.stringify(fieldEnumArray)
-    //         } else {
-    //             tableDesignColumn.fieldEnum = null
-    //         }
-    //     }
-
-    //     // 调用接口,完成登录
-    //     let result = await saveTableDesignService(mixedTableDesign.value);
-    //     ElMessage.success(result.message || '登录成功')
-    //     // 跳转首页
-    //     visibleDrawer.value = false
-    //     getTableDesignList()
-    // }
 }
 
 
@@ -272,6 +261,13 @@ const fieldTypeChange = (row, val) => {
     }
     row.fieldLength = ''
     row.fieldEnumArray = []
+}
+
+//修改列是否主键事件(控制是否可控)
+const CHG_keyYn = (row, val) => {
+    if (val == "Y") {
+        row.nullAbleYn = "N";
+    }
 }
 
 //删除枚举
@@ -444,7 +440,7 @@ const VIT_notExist = () => [
                 <!-- 数据 -->
                 <el-table :data="mixedTableDesign.list_tableDesignColumn" table-layout="auto">
                     <el-table-column label="序号" prop="fieldIndex" width="55" align="center"></el-table-column>
-                    <el-table-column prop="dataStatus" label="状态" align="center">
+                    <el-table-column prop="dataStatus" label="状态" width="100" align="center">
                         <template #default="{ row }">
                             <span v-if="mixedTableDesign.dataStatus == '0'">待建表</span>
                             <span v-else-if="row.dataStatus == '0'">新增中</span>
@@ -479,16 +475,24 @@ const VIT_notExist = () => [
                             <span v-else>{{ row.columnComment }}</span>
                         </template>
                     </el-table-column>
-                    <el-table-column label="是否主键" prop="keyYn" width="140" align="center">
+                    <el-table-column label="是否主键" prop="keyYn" width="90" align="center">
                         <template #default="{ row }">
                             <el-form-item v-if="mixedTableDesign.dataStatus == '0' || row.dataStatus != 1" prop="keyYn"
                                 :rules="VIT_required(row.keyYn)">
-                                <el-select v-model="row.keyYn">
-                                    <el-option v-for="(value, key, index) in option_YN" :key="key" :label="value"
-                                        :value="key" />
-                                </el-select>
+                                <el-checkbox v-model="row.keyYn" size="large" true-value="Y" false-value="N"
+                                    @change="(val) => CHG_keyYn(row, val)" />
                             </el-form-item>
                             <span v-else>{{ row.keyYn }}</span>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="是否可空" prop="nullAbleYn" width="90" align="center">
+                        <template #default="{ row }">
+                            <el-form-item v-if="mixedTableDesign.dataStatus == '0' || row.dataStatus != 1"
+                                prop="nullAbleYn" :rules="VIT_required(row.nullAbleYn)">
+                                <el-switch v-model="row.nullAbleYn" inline-prompt active-text="是" active-value="Y"
+                                    inactive-text="否" inactive-value="N" :disabled="row.keyYn == 'Y'" />
+                            </el-form-item>
+                            <span v-else>{{ row.nullAbleYn }}</span>
                         </template>
                     </el-table-column>
                     <el-table-column label="字段类型" prop="fieldType" width="140" align="center">
@@ -616,8 +620,9 @@ const VIT_notExist = () => [
 
 /* 穿透 scoped 作用域，直接修改子组件样式 */
 .el-table {
-    ::v-deep .el-form-item__content {
+    :deep(.el-form-item__content) {
         margin-left: 0 !important;
+        justify-content: center;
     }
 
     .el-form-item {
