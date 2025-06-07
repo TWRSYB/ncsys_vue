@@ -7,9 +7,10 @@ import {
     Delete,
     Select
 } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 //获取主列表
 import { getTableDesignListService, getTableDesignService, saveTableDesignService } from '@/api/Db.js'
+import request from '@/utils/request1'
 const getTableDesign = async () => {
     let result = await getTableDesignService('s_table_design');
     TD_TableDesign.value = result.data;
@@ -38,33 +39,84 @@ const TD_TableDesignSql = ref([])
 
 //控制抽屉是否显示
 const visibleDrawer = ref(false)
+const title_Drawer = ref('')
 
-const addTable = async () => {
-    visibleDrawer.value = true
-    await nextTick()
+const mixedTableDesign = ref({})
+
+const init_mixedTableDesign = () => {
     mixedTableDesign.value = {
+        tableType: '',
         tableName: '',
         pre_tableName: '',
         sub_tableName: '',
-        data_status: 0,
+        dataStatus: 0,
         list_tableDesignColumn: [],
         last_tableDesignSql: {}
     }
-    form_addTable.value.resetFields()
+}
+
+const show_tableDesign = (row) => {
+    request.get('/tableDesign/getTableDesignDetail', {
+        params: { tableName: row.tableName }
+        // signal: controller.signal,
+        // timeout: 5000
+    }).then((response) => {
+        console.log(response);
+        if (response.code !== 200) {
+            return
+        }
+        visibleDrawer.value = true
+        title_Drawer.value = '表设计详情'
+        init_mixedTableDesign()
+        nextTick(() => {
+            form_addTable.value.resetFields()
+            mixedTableDesign.value = response.data
+            mixedTableDesign.value.sub_tableName = response.data.tableName.substring(response.data.tableName.indexOf('_') + 1)
+            // mixedTableDesign.value.pre_tableName = response.data.tableName.substring(0, response.data.tableName.indexOf('_'))
+        })
+    }).catch(err => {
+        console.log(err);
+    })
+}
+
+const edit_tableDesign = (row) => {
+    request.get('/tableDesign/getTableDesignDetail', {
+        params: { tableName: row.tableName }
+    }).then((response) => {
+        console.log(response);
+        if (response.code !== 200) {
+            return
+        }
+        visibleDrawer.value = true
+        title_Drawer.value = '修改表设计'
+        init_mixedTableDesign()
+        nextTick(() => {
+            form_addTable.value.resetFields()
+            mixedTableDesign.value = response.data
+            mixedTableDesign.value.sub_tableName = response.data.tableName.substring(response.data.tableName.indexOf('_') + 1)
+        })
+    }).catch(err => {
+        console.log(err);
+    })
+}
+
+const addTable = () => {
+    visibleDrawer.value = true
+    title_Drawer.value = '新增表'
+    init_mixedTableDesign()
+    nextTick(() => {
+        form_addTable.value.resetFields()
+    })
 }
 
 
-const mixedTableDesign = ref({
-    tableName: '',
-    pre_tableName: '',
-    sub_tableName: '',
-    data_status: 0,
-    list_tableDesignColumn: [],
-    last_tableDesignSql: {}
-})
 
 
-const saveTableDesignSubmit = async () => {
+
+/**
+ * 提交保存表设计
+ */
+const SBM_saveTableDesign = async () => {
     let valid = await form_addTable.value.validate((valid, fields) => {
         if (!valid) {
             ElMessage.warning('请检查输入项');
@@ -90,6 +142,61 @@ const saveTableDesignSubmit = async () => {
         visibleDrawer.value = false
         getTableDesignList()
     }
+}
+
+/**
+ * 提交建表
+ */
+const SBM_createTableAndEntity = () => {
+    form_addTable.value.validate((valid, fields) => {
+        if (!valid) {
+            ElMessage.warning('请检查输入项');
+            return false
+        }
+        ElMessageBox.confirm(
+            '警告, 建表后表名不可再次修改, 是否建表?',
+            '提示',
+            {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning',
+            }
+        )
+            .then(() => {
+                ElMessage({
+                    type: 'success',
+                    message: 'Delete completed',
+                })
+            })
+            .catch(() => {
+                ElMessage({
+                    type: 'info',
+                    message: 'Delete canceled',
+                })
+            })
+    })
+
+
+
+
+    // if (valid) {
+
+    //     for (const tableDesignColumn of mixedTableDesign.value.list_tableDesignColumn) {
+    //         const fieldEnumArray = tableDesignColumn.fieldEnumArray
+    //         if (fieldEnumArray && fieldEnumArray.length) {
+    //             tableDesignColumn.fieldEnum = JSON.stringify(fieldEnumArray)
+    //         } else {
+    //             tableDesignColumn.fieldEnum = null
+    //         }
+    //     }
+
+    //     // 调用接口,完成登录
+    //     let result = await saveTableDesignService(mixedTableDesign.value);
+    //     ElMessage.success(result.message || '登录成功')
+    //     // 跳转首页
+    //     visibleDrawer.value = false
+    //     getTableDesignList()
+    // }
 }
 
 
@@ -118,6 +225,8 @@ const option_YN = { "Y": "是", "N": "否" }
 
 // 监听 B 和 C 的变化，自动更新 A
 watch([() => mixedTableDesign.value.tableType, () => mixedTableDesign.value.sub_tableName], ([type, sub]) => {
+    console.log(type, sub);
+
     let pre_tableName = type ? type + '_' : ''
     mixedTableDesign.value.pre_tableName = pre_tableName
     mixedTableDesign.value.tableName = pre_tableName + sub
@@ -172,6 +281,9 @@ const deleteColumn = (row, index) => {
 
 //添加枚举
 const addEnum = (row) => {
+    if (!row.fieldEnumArray) {
+        row.fieldEnumArray = []
+    }
     row.fieldEnumArray.push('')
     editEnum(row, '', row.fieldEnumArray.length - 1);
 }
@@ -290,13 +402,16 @@ const VIT_notExist = () => [
             <el-table-column width="55px" label="序号" type="index"> </el-table-column>
             <el-table-column v-for="field in TD_TableDesign" :label="field.columnComment" :key="field.columnName"
                 :prop="field.columnName"></el-table-column>
-            <!-- <el-table-column label="操作" width="100">
+            <el-table-column label="操作" width="100">
                 <template #default="{ row }">
-                    {{ row.tableName }}
-                    <el-button :icon="Edit" circle plain type="primary"></el-button>
-                    <el-button :icon="Delete" circle plain type="danger"></el-button>
+                    <el-icon style="margin: 0 3px;" @click="show_tableDesign(row)">
+                        <Tickets />
+                    </el-icon>
+                    <el-icon color="#409eff" style="margin: 0 3px;" @click="edit_tableDesign(row)">
+                        <Edit />
+                    </el-icon>
                 </template>
-            </el-table-column> -->
+            </el-table-column>
             <template #empty>
                 <el-empty description="没有数据" />
             </template>
@@ -304,9 +419,10 @@ const VIT_notExist = () => [
         {{ TD_TableDesign }}
 
         <!-- 抽屉 -->
-        <el-drawer v-model="visibleDrawer" title="新增表" direction="rtl" size="90%">
-            <!-- 添加文章表单 -->
-            <el-form ref="form_addTable" :model="mixedTableDesign" label-width="100px" :rules="rules">
+        <el-drawer v-model="visibleDrawer" :title="title_Drawer" direction="rtl" size="90%">
+            <!-- 新增表表单 -->
+            <el-form ref="form_addTable" :model="mixedTableDesign" label-width="100px" :rules="rules"
+                :disabled="title_Drawer == '表设计详情'">
                 <el-form-item class="itemOne" label="表分类" prop="tableType">
                     <el-radio-group v-model="mixedTableDesign.tableType">
                         <el-radio-button v-for="(value, key, index) in option_tableType" :value="key" :key="key">
@@ -328,9 +444,9 @@ const VIT_notExist = () => [
                 <!-- 数据 -->
                 <el-table :data="mixedTableDesign.list_tableDesignColumn" table-layout="auto">
                     <el-table-column label="序号" prop="fieldIndex" width="55" align="center"></el-table-column>
-                    <el-table-column prop="data_status" label="状态" align="center">
+                    <el-table-column prop="dataStatus" label="状态" align="center">
                         <template #default="{ row }">
-                            <span v-if="mixedTableDesign.data_status == '0'">待建表</span>
+                            <span v-if="mixedTableDesign.dataStatus == '0'">待建表</span>
                             <span v-else-if="row.dataStatus == '0'">新增中</span>
                             <span v-else-if="row.dataStatus == '1'">正常</span>
                             <!-- <span v-else-if="row.dataStatus == '2'">禁用</span> -->
@@ -340,7 +456,7 @@ const VIT_notExist = () => [
                     </el-table-column>
                     <el-table-column label="列名" prop="columnName" align="center">
                         <template #default="{ row }">
-                            <el-form-item v-if="mixedTableDesign.data_status == '0' || row.dataStatus != 1"
+                            <el-form-item v-if="mixedTableDesign.dataStatus == '0' || row.dataStatus != 1"
                                 prop="columnName" :rules="VIT_required(row.columnName)">
                                 <el-input v-model="row.columnName" @blur="handleBlur" v-input-filter="{
                                     regex: /[^0-9a-zA-Z_]/g,
@@ -354,7 +470,7 @@ const VIT_notExist = () => [
                     </el-table-column>
                     <el-table-column label="列注释" prop="columnComment" align="center">
                         <template #default="{ row }">
-                            <el-form-item v-if="mixedTableDesign.data_status == '0' || row.dataStatus != 1"
+                            <el-form-item v-if="mixedTableDesign.dataStatus == '0' || row.dataStatus != 1"
                                 prop="columnComment" :rules="VIT_required(row.columnComment)">
                                 <el-input v-model="row.columnComment"
                                     v-input-filter="{ maxLength: 40, notAlloweList: [' ', ':', ','] }">
@@ -365,8 +481,8 @@ const VIT_notExist = () => [
                     </el-table-column>
                     <el-table-column label="是否主键" prop="keyYn" width="140" align="center">
                         <template #default="{ row }">
-                            <el-form-item v-if="mixedTableDesign.data_status == '0' || row.dataStatus != 1"
-                                prop="keyYn" :rules="VIT_required(row.keyYn)">
+                            <el-form-item v-if="mixedTableDesign.dataStatus == '0' || row.dataStatus != 1" prop="keyYn"
+                                :rules="VIT_required(row.keyYn)">
                                 <el-select v-model="row.keyYn">
                                     <el-option v-for="(value, key, index) in option_YN" :key="key" :label="value"
                                         :value="key" />
@@ -377,7 +493,7 @@ const VIT_notExist = () => [
                     </el-table-column>
                     <el-table-column label="字段类型" prop="fieldType" width="140" align="center">
                         <template #default="{ row }">
-                            <el-form-item v-if="mixedTableDesign.data_status == '0' || row.dataStatus != 1"
+                            <el-form-item v-if="mixedTableDesign.dataStatus == '0' || row.dataStatus != 1"
                                 prop="fieldType" :rules="VIT_required(row.fieldType)">
                                 <el-select v-model="row.fieldType" placeholder="请选择字段类型"
                                     @change="(val) => fieldTypeChange(row, val)">
@@ -391,7 +507,7 @@ const VIT_notExist = () => [
                     <el-table-column label="字段长度" prop="fieldLength" width="90" align="center">
                         <template #default="{ row }">
                             <el-form-item
-                                v-if="(mixedTableDesign.data_status == '0' || row.dataStatus != 1) && row.needLength"
+                                v-if="(mixedTableDesign.dataStatus == '0' || row.dataStatus != 1) && row.needLength"
                                 prop="fieldLength" :rules="VIT_required(row.fieldLength)">
                                 <el-input v-model="row.fieldLength"
                                     v-input-filter="{ regex: /[^0-9]/g, maxLength: 4, otherMothed: (value) => value.replace(/^0+/, '') }">
@@ -404,8 +520,7 @@ const VIT_notExist = () => [
 
                     <el-table-column label="字段枚举" prop="fieldEnumArray" align="center">
                         <template #default="{ row }">
-                            <template
-                                v-if="(mixedTableDesign.data_status == '0' || row.dataStatus != 1) && row.canEnum">
+                            <template v-if="(mixedTableDesign.dataStatus == '0' || row.dataStatus != 1) && row.canEnum">
                                 <el-tag v-for="(tag, index) in row.fieldEnumArray" :key="index"
                                     @dblclick="editEnum(row, tag, index)">
                                     <template v-if="row.editingIndex === index">
@@ -437,8 +552,8 @@ const VIT_notExist = () => [
 
                                     <span v-else>{{ tag }}</span>
                                 </el-tag>
-                                <el-button v-if="row.editingIndex === ''" :icon="Plus" @click="addEnum(row)" text
-                                    type="primary"></el-button>
+                                <el-button v-if="!Number.isInteger(parseInt(row.editingIndex))" :icon="Plus"
+                                    @click="addEnum(row)" text type="primary"></el-button>
                             </template>
                             <el-tag v-else v-for="(tag, index) in row.fieldEnumArray" :key="index">
                                 {{ tag }}
@@ -447,7 +562,7 @@ const VIT_notExist = () => [
                     </el-table-column>
                     <el-table-column label="操作" align="center">
                         <template #default="scope">
-                            <template v-if="mixedTableDesign.data_status == '0'">
+                            <template v-if="mixedTableDesign.dataStatus == '0'">
                                 <el-button @click="deleteColumn(scope.row, scope.$index)" type="info" size="small"
                                     plain>删除</el-button>
                             </template>
@@ -472,11 +587,11 @@ const VIT_notExist = () => [
 
 
             <el-button type="primary" @click="addColumn()">添加字段</el-button>
-            <el-button type="primary" @click="saveTableDesignSubmit"
-                v-if="mixedTableDesign.data_status == '0'">保存</el-button>
-            <el-button type="primary" @click="createTableAndEntity('草稿')"
-                v-if="mixedTableDesign.data_status == '0'">创建表和实体类</el-button>
-            <el-button type="primary" @click="createTableAndEntity('草稿')">查看最新建表语句</el-button>
+            <el-button type="primary" @click="SBM_saveTableDesign"
+                v-if="mixedTableDesign.dataStatus == '0'">保存</el-button>
+            <el-button type="primary" @click="SBM_createTableAndEntity"
+                v-if="mixedTableDesign.dataStatus == '0'">创建表和实体类</el-button>
+            <el-button type="primary" @click="SBM_createTableAndEntity('草稿')">查看最新建表语句</el-button>
 
             <br><br><br>
             {{ TD_TableDesignColumn }}
