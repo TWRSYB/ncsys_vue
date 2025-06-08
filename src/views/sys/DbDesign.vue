@@ -340,12 +340,14 @@ const confirm_Enum = (row, tag, index) => {
             ElMessage.warning('已有枚举格式为key-value形式, 请保持格式一致');
             return
         }
-        const keyList = row.fieldEnumArray.map(item => item.split('-')[0]);
+        const keyList = row.fieldEnumArray.filter((_, i) => i !== index) // 排除指定索引
+            .map(item => item.split('-')[0]);
         if (keyList.includes(tempEnum.split('-')[0])) {
             ElMessage.warning('key重复, 请重新输入');
             return
         }
-        const valueList = row.fieldEnumArray.map(item => item.split('-')[1]);
+        const valueList = row.fieldEnumArray.filter((_, i) => i !== index) // 排除指定索引
+            .map(item => item.split('-')[1]);
         if (valueList.includes(tempEnum.split('-')[1])) {
             ElMessage.warning('value重复, 请重新输入');
             return
