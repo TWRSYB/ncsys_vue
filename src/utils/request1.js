@@ -42,10 +42,14 @@ class Request {
         // 业务状态码判断（根据实际后端接口调整）
         if (response.data.code !== 200) {
           // 统一错误处理
-          if (response.config.showErrorToast !== false) {
+          if (response.config.showErrorMsg !== false) {
             ElMessage.error(response.data.message || '请求失败')
           }
           return Promise.reject(new Error(response.data.message || 'Error'))
+        } else {
+          if (response.config.showSuccessMsg === true) {
+            ElMessage.success(response.data.message || '请求成功')
+          }
         }
         return response.data
       },
@@ -61,7 +65,7 @@ class Request {
 
         // 统一错误处理
         const message = error.response?.data?.message || '网络异常'
-        if (error.config.showErrorToast !== false) {
+        if (error.config.showErrorMsg !== false) {
           ElMessage.error(message)
         }
         return Promise.reject(error)

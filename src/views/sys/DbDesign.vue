@@ -79,9 +79,9 @@ const show_tableDesign = (row) => {
     })
 }
 
-const edit_tableDesign = (row) => {
+const ACT_editTableDesign = (tableName) => {
     request.get('/tableDesign/getTableDesignDetail', {
-        params: { tableName: row.tableName }
+        params: { tableName: tableName }
     }).then((response) => {
         console.log(response);
         if (response.code !== 200) {
@@ -174,16 +174,45 @@ const SBM_createTableAndEntity = () => {
             // 调用接口,完成登录
             request.post('/tableDesign/createTableAndEntity', mixedTableDesign.value)
                 .then((response) => {
-
+                    if (response.code === 200) {
+                        // 跳转首页
+                        visibleDrawer.value = false
+                        getTableDesignList()
+                    }
                 })
-                .catch((err) => {
-
-                })
-            ElMessage.success(result.message || '登录成功')
-            // 跳转首页
-            visibleDrawer.value = false
-            getTableDesignList()
         })
+    })
+
+}
+
+/**
+ * 提交新增列
+ */
+const SBM_addColumn = (row, index) => {
+    form_addTable.value.validate((valid, fields) => {
+        if (!valid) {
+            ElMessage.warning('请检查输入项');
+            return false
+        }
+
+        const fieldEnumArray = row.fieldEnumArray
+        if (fieldEnumArray && fieldEnumArray.length) {
+            row.fieldEnum = JSON.stringify(fieldEnumArray)
+        } else {
+            row.fieldEnum = null
+        }
+
+        row.tableId = mixedTableDesign.value.tableId
+        row.tableName = mixedTableDesign.value.tableName
+
+        // 调用接口,完成登录
+    request.post('/tableDesign/addColumn', row, {showSuccessMsg: true})
+            .then((response) => {
+                if (response.code===200) {
+                    // 添加列成功, 刷新编辑页面
+                    ACT_editTableDesign(row.tableName)
+                }
+            })
     })
 
 }
@@ -273,7 +302,7 @@ const CHG_keyYn = (row, val) => {
 }
 
 //删除枚举
-const deleteColumn = (row, index) => {
+const ACT_deleteColumn = (row, index) => {
     mixedTableDesign.value.list_tableDesignColumn.splice(index, 1)
 }
 
@@ -407,7 +436,7 @@ const VIT_notExist = () => {
                     <el-icon style="margin: 0 3px;" @click="show_tableDesign(row)">
                         <Tickets />
                     </el-icon>
-                    <el-icon color="#409eff" style="margin: 0 3px;" @click="edit_tableDesign(row)">
+                    <el-icon color="#409eff" style="margin: 0 3px;" @click="ACT_editTableDesign(row.tableName)">
                         <Edit />
                     </el-icon>
                 </template>
@@ -424,30 +453,38 @@ const VIT_notExist = () => {
             <el-form ref="form_addTable" :model="mixedTableDesign" label-width="100px" :rules="rules"
                 :disabled="title_Drawer == '表设计详情'">
                 <el-form-item class="itemOne" label="表分类" prop="tableType">
-                    <el-radio-group v-model="mixedTableDesign.tableType">
+                    <el-radio-group v-model="mixedTableDesign.tableType" v-if="mixedTableDesign.dataStatus == '0'">
                         <el-radio-button v-for="(value, key, index) in option_tableType" :value="key" :key="key">
                             {{ value }}
                         </el-radio-button>
                     </el-radio-group>
+                    <span v-else>{{ mixedTableDesign.tableType }}</span>
                 </el-form-item>
                 <el-form-item label="表名" prop="sub_tableName">
                     <el-input v-model="mixedTableDesign.sub_tableName" placeholder="多个英文单词使用下划线拼接,长度不超过40个字符"
                         v-input-filter="{ regex: /[^0-9a-zA-Z_]/g, maxLength: 40, upOrLower: 'lower', otherMothed: (value) => value.replace(/^_+/, '').replace('__', '_') }"
-                        @blur="handleBlur">
+                        @blur="handleBlur" v-if="mixedTableDesign.dataStatus == '0'">
                         <template #prepend>{{ mixedTableDesign.pre_tableName }}</template>
                     </el-input>
+                    <span v-else>{{ mixedTableDesign.tableName }}</span>
                 </el-form-item>
                 <el-form-item label="表注释" prop="tableComment">
                     <el-input v-model="mixedTableDesign.tableComment" placeholder="长度不超过40个字符"
-                        v-input-filter="{ maxLength: 40, notAlloweList: [' '] }"></el-input>
+                        v-input-filter="{ maxLength: 40, notAlloweList: [' '] }"
+                        v-if="mixedTableDesign.dataStatus == '0'"></el-input>
+                    <span v-else>{{ mixedTableDesign.tableComment }}</span>
                 </el-form-item>
                 <!-- 数据 -->
                 <el-table :data="mixedTableDesign.list_tableDesignColumn" table-layout="auto">
-                    <el-table-column label="序号" prop="fieldIndex" width="55" align="center"></el-table-column>
+                    <el-table-column label="序号" prop="fieldIndex" width="55" align="center">
+                        <template #default="{ row, $index }">
+                            {{ row.ordinalPosition || row.fieldIndex }}
+                        </template>
+                    </el-table-column>
                     <el-table-column prop="dataStatus" label="状态" width="100" align="center">
                         <template #default="{ row }">
                             <span v-if="mixedTableDesign.dataStatus == '0'">待建表</span>
-                            <span v-else-if="row.dataStatus == '0'">新增中</span>
+                            <span v-else-if="row.dataStatus == '0'">添加中</span>
                             <span v-else-if="row.dataStatus == '1'">正常</span>
                             <!-- <span v-else-if="row.dataStatus == '2'">禁用</span> -->
                             <span v-else-if="row.dataStatus == '3'">编辑中</span>
@@ -578,22 +615,22 @@ const VIT_notExist = () => {
                             <span v-else>{{ row.defaultValue }}</span>
                         </template>
                     </el-table-column> -->
-                    <el-table-column label="操作" align="center">
-                        <template #default="scope">
+                    <el-table-column label="操作" align="center" width="170">
+                        <template #default="{ row, $index }">
                             <template v-if="mixedTableDesign.dataStatus == '0'">
-                                <el-button @click="deleteColumn(scope.row, scope.$index)" type="info" size="small"
+                                <el-button @click="ACT_deleteColumn(row, $index)" type="info" size="small"
                                     plain>删除</el-button>
                             </template>
                             <template v-else>
-                                <el-button @click="submitAddArea(scope.row, scope.$index)" v-if="scope.row.status == 0"
-                                    type="primary" size="small">提交新增</el-button>
+                                <el-button @click="SBM_addColumn(row, $index)" v-if="row.dataStatus == 0" type="primary"
+                                    size="small">提交新增</el-button>
 
-                                <el-button @click="modifyArea(scope.row, scope.$index)" v-if="scope.row.status == 1"
+                                <el-button @click="ACT_modifyColumn(row, $index)" v-if="row.dataStatus == 1"
                                     size="small">修改</el-button>
-                                <el-button @click="submitModifyArea(scope.row, scope.$index)"
-                                    v-if="scope.row.status == 2" type="primary" size="small">提交修改</el-button>
+                                <el-button @click="SMB_modifyColumn(row, $index)" v-if="row.dataStatus == 2"
+                                    type="primary" size="small">提交修改</el-button>
 
-                                <el-button @click="areaCannel(scope.row, scope.$index)" v-if="scope.row.status != 1"
+                                <el-button @click="ACT_cancelChangeColumn(row, $index)" v-if="row.dataStatus != 1"
                                     size="small">取消</el-button>
                             </template>
                         </template>
