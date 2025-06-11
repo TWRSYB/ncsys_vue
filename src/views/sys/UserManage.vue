@@ -1,15 +1,7 @@
 <script setup>
-import {
-    Edit,
-    Delete
-} from '@element-plus/icons-vue'
-
-import { ref } from 'vue'
 
 
 
-//用户搜索时选中的发布状态
-const state = ref('')
 
 //文章列表数据模型
 const userList = ref([])
@@ -28,7 +20,6 @@ const getUserList = async () => {
 
 getUserList()
 
-import { Plus } from '@element-plus/icons-vue'
 //控制抽屉是否显示
 const visibleDrawer = ref(false)
 //添加表单数据模型
@@ -58,7 +49,7 @@ const articleModel = ref({
             </div>
         </template>
 
-             <!-- * 用户ID  userId;
+        <!-- * 用户ID  userId;
      * 登录码  loginCode;  
      * 登录密码  loginPassword;  
      * 用户名  userName;  
@@ -84,8 +75,8 @@ const articleModel = ref({
             <el-table-column label="最后更新时间" prop="updateTime"></el-table-column>
             <el-table-column label="操作" width="100">
                 <template #default="{ row }">
-                    <el-button :icon="Edit" circle plain type="primary"></el-button>
-                    <el-button :icon="Delete" circle plain type="danger"></el-button>
+                    <el-button icon="Edit" circle plain type="primary"></el-button>
+                    <el-button icon="Delete" circle plain type="danger"></el-button>
                 </template>
             </el-table-column>
             <template #empty>
@@ -93,9 +84,9 @@ const articleModel = ref({
             </template>
         </el-table>
         <!-- 分页条 -->
-        <el-pagination v-model:current-page="pageNum" v-model:page-size="pageSize" :page-sizes="[3, 5, 10, 15]"
+        <!-- <el-pagination v-model:current-page="pageNum" v-model:page-size="pageSize" :page-sizes="[3, 5, 10, 15]"
             layout="jumper, total, sizes, prev, pager, next" background :total="total" @size-change="onSizeChange"
-            @current-change="onCurrentChange" style="margin-top: 20px; justify-content: flex-end" />
+            @current-change="onCurrentChange" style="margin-top: 20px; justify-content: flex-end" /> -->
 
         <!-- 抽屉 -->
         <el-drawer v-model="visibleDrawer" title="添加文章" direction="rtl" size="50%">
@@ -119,25 +110,21 @@ const articleModel = ref({
                         headers:设置上传的请求头
                         on-success:设置上传成功的回调函数
                      -->
-                   
-                    <el-upload class="avatar-uploader" :auto-upload="true" :show-file-list="false"
-                    action="/api/upload"
-                    name="file"
-                    :headers="{'Authorization':tokenStore.token}"
-                    :on-success="uploadSuccess"
-                    >
+
+                    <el-upload class="avatar-uploader" :auto-upload="true" :show-file-list="false" action="/api/upload"
+                        name="file" :headers="{ 'Authorization': tokenStore.token }" :on-success="uploadSuccess">
                         <img v-if="articleModel.coverImg" :src="articleModel.coverImg" class="avatar" />
                         <el-icon v-else class="avatar-uploader-icon">
                             <Plus />
                         </el-icon>
                     </el-upload>
                 </el-form-item>
-                <el-form-item label="文章内容">
+                <!-- <el-form-item label="文章内容">
                     <div class="editor">
                         <quill-editor theme="snow" v-model:content="articleModel.content" contentType="html">
                         </quill-editor>
                     </div>
-                </el-form-item>
+                </el-form-item> -->
                 <el-form-item>
                     <el-button type="primary" @click="addArticle('已发布')">发布</el-button>
                     <el-button type="info" @click="addArticle('草稿')">草稿</el-button>

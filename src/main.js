@@ -6,13 +6,26 @@ import 'element-plus/dist/index.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import App from './App.vue'
 import router from '@/router'
+// import deepClone from './utils/deepClone'
+import comUtils from './plugins/ComUtils'
+
+// 挂载到全局对象（浏览器环境）
+// window.$deepClone = deepClone
+window.$Com = comUtils
+
+
 
 const app = createApp(App)
+// ElementPlus
 app.use(ElementPlus)
+// ElementPlus图标
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component)
 }
 app.use(router)
+// 全局属性
+// app.config.globalProperties.$deepClone = deepClone
+// 输入框绑定过滤
 app.directive('input-filter', {
     mounted(el, binding) {
         const inputElement = el.querySelector('.el-input__wrapper .el-input__inner');

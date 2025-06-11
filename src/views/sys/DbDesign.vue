@@ -1,16 +1,10 @@
 <script setup>
-import { ref, watch, nextTick, toRaw } from 'vue'
-import {
-    Edit,
-    Close,
-    Plus,
-    Delete,
-    Select
-} from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+
 //获取主列表
 import { getTableDesignListService, getTableDesignService, saveTableDesignService } from '@/api/Db.js'
 import request from '@/utils/request1'
+// const { proxy } = getCurrentInstance()
+
 const getTableDesign = async () => {
     let result = await getTableDesignService('s_table_design');
     TD_TableDesign.value = result.data;
@@ -61,7 +55,6 @@ const show_tableDesign = (row) => {
         // signal: controller.signal,
         // timeout: 5000
     }).then((response) => {
-        console.log(response);
         if (response.code !== 200) {
             return
         }
@@ -83,7 +76,6 @@ const ACT_editTableDesign = (tableName) => {
     request.get('/tableDesign/getTableDesignDetail', {
         params: { tableName: tableName }
     }).then((response) => {
-        console.log(response);
         if (response.code !== 200) {
             return
         }
@@ -205,14 +197,39 @@ const SBM_addColumn = (row, index) => {
         row.tableId = mixedTableDesign.value.tableId
         row.tableName = mixedTableDesign.value.tableName
 
-        // 调用接口,完成登录
-    request.post('/tableDesign/addColumn', row, {showSuccessMsg: true})
+        request.post('/tableDesign/addColumn', row, { showSuccessMsg: true })
             .then((response) => {
-                if (response.code===200) {
+                if (response.code === 200) {
                     // 添加列成功, 刷新编辑页面
                     ACT_editTableDesign(row.tableName)
                 }
             })
+    })
+
+}
+
+/**
+ * 提交修改列
+ */
+const SMB_modifyColumn = (row, index) => {
+    form_addTable.value.validate((valid, fields) => {
+        if (!valid) {
+            ElMessage.warning('请检查输入项');
+            return false
+        }
+
+        const fieldEnumArray = row.fieldEnumArray
+        if (fieldEnumArray && fieldEnumArray.length) {
+            row.fieldEnum = JSON.stringify(fieldEnumArray)
+        } else {
+            row.fieldEnum = null
+        }
+
+        row.tableId = mixedTableDesign.value.tableId
+        row.tableName = mixedTableDesign.value.tableName
+
+        ElMessage.warning('功能还没开发');
+
     })
 
 }
@@ -301,9 +318,22 @@ const CHG_keyYn = (row, val) => {
     }
 }
 
-//删除枚举
+//删除字段
 const ACT_deleteColumn = (row, index) => {
     mixedTableDesign.value.list_tableDesignColumn.splice(index, 1)
+}
+
+
+//修改字段
+const ACT_modifyColumn = (row, index) => {
+    // mixedTableDesign.value.tempColumn = proxy.$deepClone(row);
+    mixedTableDesign.value.tempColumn = $Com.deepClone(row);
+    row.dataStatus = '3'
+}
+
+//取消修改/新增字段
+const ACT_cancelChangeColumn = (row, index) => {
+    mixedTableDesign.value.list_tableDesignColumn[index] = mixedTableDesign.value.tempColumn
 }
 
 //添加枚举
@@ -617,20 +647,19 @@ const VIT_notExist = () => {
                     </el-table-column> -->
                     <el-table-column label="操作" align="center" width="170">
                         <template #default="{ row, $index }">
-                            <template v-if="mixedTableDesign.dataStatus == '0'">
-                                <el-button @click="ACT_deleteColumn(row, $index)" type="info" size="small"
-                                    plain>删除</el-button>
+                            <template v-if="mixedTableDesign.dataStatus === '0'">
+                                <el-button @click="ACT_deleteColumn(row, $index)" size="small">删除</el-button>
                             </template>
                             <template v-else>
-                                <el-button @click="SBM_addColumn(row, $index)" v-if="row.dataStatus == 0" type="primary"
-                                    size="small">提交新增</el-button>
-
-                                <el-button @click="ACT_modifyColumn(row, $index)" v-if="row.dataStatus == 1"
+                                <el-button @click="SBM_addColumn(row, $index)" v-if="row.dataStatus === '0'"
+                                    type="primary" size="small">提交添加</el-button>
+                                <el-button @click="ACT_deleteColumn(row, $index)" v-if="row.dataStatus === '0'"
+                                    size="small">取消</el-button>
+                                <el-button @click="ACT_modifyColumn(row, $index)" v-if="row.dataStatus === '1'"
                                     size="small">修改</el-button>
-                                <el-button @click="SMB_modifyColumn(row, $index)" v-if="row.dataStatus == 2"
+                                <el-button @click="SMB_modifyColumn(row, $index)" v-if="row.dataStatus === '3'"
                                     type="primary" size="small">提交修改</el-button>
-
-                                <el-button @click="ACT_cancelChangeColumn(row, $index)" v-if="row.dataStatus != 1"
+                                <el-button @click="ACT_cancelChangeColumn(row, $index)" v-if="row.dataStatus === '3'"
                                     size="small">取消</el-button>
                             </template>
                         </template>

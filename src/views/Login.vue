@@ -1,7 +1,6 @@
 <script setup>
-import { User, Lock } from '@element-plus/icons-vue'
-import { ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { userLoginService } from '@/api/user.js'
+
 const formData_login = ref({
     loginCode: '',
     loginPassword: ''
@@ -21,9 +20,6 @@ const rules = {
     ]
 }
 
-
-import { userLoginService } from '@/api/user.js'
-import { useRouter } from 'vue-router'
 const router = useRouter()
 
 const login = async () => {
@@ -59,10 +55,10 @@ const login = async () => {
                     <h1>登录</h1>
                 </el-form-item>
                 <el-form-item prop="loginCode">
-                    <el-input v-model="formData_login.loginCode" :prefix-icon="User" placeholder="请输入账号"></el-input>
+                    <el-input v-model="formData_login.loginCode" prefix-icon="User" placeholder="请输入账号"></el-input>
                 </el-form-item>
                 <el-form-item prop="loginPassword">
-                    <el-input v-model="formData_login.loginPassword" :prefix-icon="Lock" type="password"
+                    <el-input v-model="formData_login.loginPassword" prefix-icon="Lock" type="password"
                         placeholder="请输入密码"></el-input>
                 </el-form-item>
                 <!-- 登录按钮 -->
