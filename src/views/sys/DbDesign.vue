@@ -16,7 +16,7 @@ onMounted(() => {
     // 获取表设计
     getTableDesign();
     getTableDesignList();
-}) 
+})
 
 
 
@@ -53,7 +53,7 @@ const init_mixedTableDesign = () => {
     }
 }
 
-const show_tableDesign = (row) => {
+const ACT_showTableDesign = (row) => {
     $Requests.get('/tableDesign/getTableDesignDetail', {
         params: { tableName: row.tableName }
         // signal: controller.signal,
@@ -177,6 +177,31 @@ const SBM_createTableAndEntity = () => {
                     }
                 })
         })
+    })
+
+}
+
+/**
+ * 提交删除表
+ */
+const SBM_deleteTableDesign = (row) => {
+
+    ElMessageBox.confirm(
+        '警告, 确定要删除这个表设计吗?',
+        '提示',
+        {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning',
+        }
+    ).then(() => {
+        // 调用接口,完成登录
+        $Requests.post('/tableDesign/deleteTableDesign', row, { showSuccessMsg: true })
+            .then((response) => {
+                if (response.code === 200) {
+                    getTableDesignList()
+                }
+            })
     })
 
 }
@@ -466,11 +491,15 @@ const VIT_notExist = () => {
                 :prop="field.columnName"></el-table-column>
             <el-table-column label="操作" width="100">
                 <template #default="{ row }">
-                    <el-icon style="margin: 0 3px;" @click="show_tableDesign(row)">
+                    <el-icon style="margin: 0 3px;" @click="ACT_showTableDesign(row)">
                         <Tickets />
                     </el-icon>
                     <el-icon color="#409eff" style="margin: 0 3px;" @click="ACT_editTableDesign(row.tableName)">
                         <Edit />
+                    </el-icon>
+                    <el-icon color="#f56c6c" style="margin: 0 3px;" @click="SBM_deleteTableDesign(row)"
+                        v-if="row.dataStatus == '0'">
+                        <Delete />
                     </el-icon>
                 </template>
             </el-table-column>
