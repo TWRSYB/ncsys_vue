@@ -8,6 +8,7 @@ import App from './App.vue'
 import router from '@/router'
 // import deepClone from './utils/deepClone'
 import comUtils from './plugins/ComUtils'
+import { regSvg } from './components/svg'
 
 // 挂载到全局对象（浏览器环境）
 // window.$deepClone = deepClone
@@ -22,6 +23,9 @@ app.use(ElementPlus)
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
     app.component(key, component)
 }
+
+regSvg(app) // 注册SVG图标组件
+
 app.use(router)
 // 全局属性
 // app.config.globalProperties.$deepClone = deepClone
