@@ -1,6 +1,8 @@
 <script setup>
 import avatar from '@/assets/default.png'
+import { useTokenStore } from '@/stores/token';
 
+const router = useRouter();
 
 // 折叠导航栏
 const isCollapse = ref(false)
@@ -10,6 +12,14 @@ const isCollapse = ref(false)
 // const handleClose = (key, keyPath) => {
 //     console.log(key, keyPath)
 // }
+ const ACT_logout = () => {
+    // 清除token
+    useTokenStore().removeToken();
+    // 跳转到登录页
+    router.push('/login');
+
+}
+
 
 </script>
 
@@ -130,7 +140,7 @@ const isCollapse = ref(false)
                             <el-dropdown-item command="profile" icon="User">基本资料</el-dropdown-item>
                             <el-dropdown-item command="avatar" icon="Crop">更换头像</el-dropdown-item>
                             <el-dropdown-item command="password" icon="EditPen">重置密码</el-dropdown-item>
-                            <el-dropdown-item command="logout" icon="SwitchButton">退出登录</el-dropdown-item>
+                            <el-dropdown-item command="logout" icon="SwitchButton" @click="ACT_logout">退出登录</el-dropdown-item>
                         </el-dropdown-menu>
                     </template>
                 </el-dropdown>

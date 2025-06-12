@@ -2,8 +2,6 @@
 
 //获取主列表
 import { getTableDesignListService, getTableDesignService, saveTableDesignService } from '@/api/Db.js'
-import request from '@/utils/request1'
-// const { proxy } = getCurrentInstance()
 
 const getTableDesign = async () => {
     let result = await getTableDesignService('s_table_design');
@@ -14,8 +12,14 @@ const getTableDesign = async () => {
     TD_TableDesignSql.value = result.data;
 }
 
+onMounted(() => {
+    // 获取表设计
+    getTableDesign();
+    getTableDesignList();
+}) 
 
-getTableDesign()
+
+
 
 const getTableDesignList = async () => {
     let result = await getTableDesignListService();
@@ -23,7 +27,7 @@ const getTableDesignList = async () => {
     list_tableDesign.value = result.data;
 }
 
-getTableDesignList()
+
 
 const list_tableDesign = ref([])
 
@@ -50,7 +54,7 @@ const init_mixedTableDesign = () => {
 }
 
 const show_tableDesign = (row) => {
-    request.get('/tableDesign/getTableDesignDetail', {
+    $Requests.get('/tableDesign/getTableDesignDetail', {
         params: { tableName: row.tableName }
         // signal: controller.signal,
         // timeout: 5000
@@ -73,7 +77,7 @@ const show_tableDesign = (row) => {
 }
 
 const ACT_editTableDesign = (tableName) => {
-    request.get('/tableDesign/getTableDesignDetail', {
+    $Requests.get('/tableDesign/getTableDesignDetail', {
         params: { tableName: tableName }
     }).then((response) => {
         if (response.code !== 200) {
@@ -164,7 +168,7 @@ const SBM_createTableAndEntity = () => {
             }
 
             // 调用接口,完成登录
-            request.post('/tableDesign/createTableAndEntity', mixedTableDesign.value)
+            $Requests.post('/tableDesign/createTableAndEntity', mixedTableDesign.value)
                 .then((response) => {
                     if (response.code === 200) {
                         // 跳转首页
@@ -197,7 +201,7 @@ const SBM_addColumn = (row, index) => {
         row.tableId = mixedTableDesign.value.tableId
         row.tableName = mixedTableDesign.value.tableName
 
-        request.post('/tableDesign/addColumn', row, { showSuccessMsg: true })
+        $Requests.post('/tableDesign/addColumn', row, { showSuccessMsg: true })
             .then((response) => {
                 if (response.code === 200) {
                     // 添加列成功, 刷新编辑页面
@@ -326,7 +330,6 @@ const ACT_deleteColumn = (row, index) => {
 
 //修改字段
 const ACT_modifyColumn = (row, index) => {
-    // mixedTableDesign.value.tempColumn = proxy.$deepClone(row);
     mixedTableDesign.value.tempColumn = $Com.deepClone(row);
     row.dataStatus = '3'
 }
@@ -627,7 +630,7 @@ const VIT_notExist = () => {
 
                                     <span v-else>{{ tag }}</span>
                                 </el-tag>
-                                <el-button v-if="!Number.isInteger(parseInt(row.editingIndex))" :icon="Plus"
+                                <el-button v-if="!Number.isInteger(parseInt(row.editingIndex))" icon="Plus"
                                     @click="addEnum(row)" text type="primary"></el-button>
                             </template>
                             <el-tag v-else v-for="(tag, index) in row.fieldEnumArray" :key="index">

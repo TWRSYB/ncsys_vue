@@ -6,13 +6,17 @@ import 'element-plus/dist/index.css'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import App from './App.vue'
 import router from '@/router'
-// import deepClone from './utils/deepClone'
 import comUtils from './plugins/ComUtils'
+import request from './plugins/Requests'
 import { regSvg } from './components/svg'
+import { createPinia } from 'pinia' // 引入 Pinia
+import { createPersistedState } from 'pinia-persistedstate-plugin' // 持久化插件
+
+
 
 // 挂载到全局对象（浏览器环境）
-// window.$deepClone = deepClone
 window.$Com = comUtils
+window.$Requests = request
 
 
 
@@ -26,10 +30,19 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 
 regSvg(app) // 注册SVG图标组件
 
+// 创建 Pinia 实例
+const pinia = createPinia()
+const persist = createPersistedState()
+// 使用持久化插件
+pinia.use(persist)
+// 挂载 Pinia 实例到 Vue 应用
+app.use(pinia)
+
 app.use(router)
 // 全局属性
 // app.config.globalProperties.$deepClone = deepClone
-// 输入框绑定过滤
+
+// 1. 定义全局指令(输入框绑定过滤)
 app.directive('input-filter', {
     mounted(el, binding) {
         const inputElement = el.querySelector('.el-input__wrapper .el-input__inner');

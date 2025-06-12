@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import { useTokenStore } from "@/stores/token"; // 引入 Pinia store
 
 import LoginVue from "@/views/Login.vue"
 import LayoutVue from "@/views/Layout.vue"
@@ -19,6 +20,7 @@ const routes = [
   {
     path: '/',
     component: LayoutVue,
+    meta: { requiresAuth: true }, // 需要认证的路由
     children: [
       {
         path: '/sys/UserManage',
@@ -63,5 +65,23 @@ const router = createRouter({
     history: createWebHistory(),
     routes: routes
 })
+
+router.beforeEach((to, from, next) => {
+  // 检查是否需要认证
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    // 如果是需要认证的路由，检查用户是否已登录
+    const tokenStore = useTokenStore();
+    if (!tokenStore.token) {
+      // 如果没有token，重定向到登录页
+      next({ path: '/login' });
+    } else {
+      // 如果有token，继续导航
+      next();
+    }
+  } else {
+    // 不需要认证的路由，直接导航
+    next();
+  }
+});
 
 export default router
