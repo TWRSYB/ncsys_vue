@@ -12,6 +12,10 @@ import request from './plugins/Requests'
 import { regSvg } from './components/svg'
 import { createPinia } from 'pinia' // 引入 Pinia
 import { createPersistedState } from 'pinia-persistedstate-plugin' // 持久化插件
+import highlightDirective from '@/directives/highlight';
+import inputFilterDirective from './directives/input-filter'
+
+
 
 
 
@@ -31,74 +35,17 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 
 regSvg(app) // 注册SVG图标组件
 
-// 创建 Pinia 实例
-const pinia = createPinia()
-const persist = createPersistedState()
-// 使用持久化插件
-pinia.use(persist)
-// 挂载 Pinia 实例到 Vue 应用
-app.use(pinia)
 
-app.use(router)
+const pinia = createPinia() // 创建 Pinia 实例
+const persist = createPersistedState() // 创建持久化状态插件实例
+pinia.use(persist)  // 持久化状态插件
+app.use(pinia) // 使用 Pinia 状态管理 (挂载 Pinia 实例到 Vue 应用)
+app.use(router) // 使用路由
+
 // 全局属性
 // app.config.globalProperties.$deepClone = deepClone
 
-// 1. 定义全局指令(输入框绑定过滤)
-app.directive('input-filter', {
-    mounted(el, binding) {
-        const inputElement = el.querySelector('.el-input__wrapper .el-input__inner');
-        if (!inputElement) return;
-        const { regex, maxLength, upOrLower, notAlloweList, replaceMap, otherMothed } = binding.value || {};
-        inputElement.addEventListener('input', () => {
-            let newValue = inputElement.value;
-            // 应用正则过滤
-            if (regex) {
-                const pattern = typeof regex === 'string' ? new RegExp(regex) : regex;
-                newValue = newValue.replace(pattern, '');
-            }
-
-            // 应用长度限制
-            if (typeof maxLength == 'number' && maxLength > 0 && maxLength % 1 === 0) {
-                newValue = newValue.slice(0, maxLength);
-            }
-
-            // 大小写转换
-            if (upOrLower == 'up') {
-                newValue = newValue.toUpCase();
-            } else if (upOrLower == 'lower') {
-                newValue = newValue.toLowerCase();
-            }
-
-
-            // 去除不允许出现的内容: 1. 先确保是数组 2. 再验证所有元素类型为字符串
-            if (Array.isArray(notAlloweList) && notAlloweList.every(item => typeof item === 'string')) {
-                for (const item of notAlloweList) {
-                    newValue = newValue.replace(item, '');
-                }
-            }
-
-            // 替换元素
-            if (replaceMap) {
-                Object.entries(replaceMap).forEach(([key, value]) => {
-                    newValue = newValue.replace(key, value);
-                });
-            }
-
-            // 其他自定义方法
-            if (otherMothed) {
-                newValue = otherMothed(newValue);
-            }
-
-            if (newValue !== inputElement.value) {
-                // 使用 Vue.nextTick 确保 DOM 更新后重置值
-                setTimeout(() => {
-                    inputElement.value = newValue;
-                    // 触发 input 事件更新 v-model
-                    inputElement.dispatchEvent(new Event('input'));
-                }, 0);
-            }
-        }
-        );
-    }
-});
+// 1. 定义全局指令
+app.directive('input-filter', inputFilterDirective); // 注册input过滤指令
+app.directive('highlight', highlightDirective); // 注册高亮指令
 app.mount('#app')

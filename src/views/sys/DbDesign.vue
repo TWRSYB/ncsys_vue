@@ -99,7 +99,7 @@ const ACT_editTableDesign = (tableName) => {
     })
 }
 
-const addTable = () => {
+const ACT_addTable = () => {
     visibleDrawer.value = true
     title_Drawer.value = '新增表'
     init_mixedTableDesign()
@@ -487,14 +487,14 @@ const SBM_addUniqueKey = (row, index) => {
             return false
         }
 
-        
+
         const key = mixedTableDesign.value.list_tableDesignColumn.filter((item) => item.keyYn == 'Y').map((item) => item.columnName)
         if ($Com.arraysEqual(key, row.uniqueKeyColumnArray)) {
             ElMessage.warning('唯一约束不能与主键重复');
             return false
         }
 
-        
+
         const uniqueKeys = mixedTableDesign.value.list_uniqueKey.filter((item) => item.dataStatus == '1').map((item) => item.uniqueKeyColumnArray)
         for (const uniqueKey of uniqueKeys) {
             if ($Com.arraysEqual(uniqueKey, row.uniqueKeyColumnArray)) {
@@ -546,6 +546,28 @@ const SBM_deleteUniqueKey = (row) => {
 }
 
 
+const DLG_lastSql = ref(false);
+
+const ACT_showLastSql = () => {
+    if (!mixedTableDesign.value.last_tableDesignSql || !mixedTableDesign.value.last_tableDesignSql.lastCreateSql) {
+        ElMessage.warning('没有上次生成的SQL');
+        return;
+    }
+    DLG_lastSql.value = true;
+}
+
+
+
+// 核心复制逻辑
+const handleCopy = async () => {
+    // 现代浏览器方案（优先使用）
+    if (navigator.clipboard) {
+        await navigator.clipboard.writeText(mixedTableDesign.value.last_tableDesignSql.lastCreateSql);
+        ElMessage.success('SQL已复制到剪贴板');
+        DLG_lastSql.value = false
+    }
+};
+
 
 
 
@@ -585,14 +607,15 @@ const VIT_notExist = () => {
                 <span>数据库管理</span>
                 <div class="extra">
                     <el-button type="primary" @click="getTableDesignList">刷新</el-button>
-                    <el-button type="primary" @click="addTable">新增表</el-button>
+                    <el-button type="primary" @click="ACT_addTable">新增表</el-button>
                 </div>
             </div>
         </template>
-         <!-- show-overflow-tooltip -->
+        <!-- show-overflow-tooltip -->
         <el-table :data="list_tableDesign" border style="width: 100%">
             <el-table-column width="55px" label="序号" type="index"> </el-table-column>
-            <el-table-column v-for="field in Fielded_TD_TableDesign" :key="field.columnName" :label="field.columnComment" :prop="field.columnName">
+            <el-table-column v-for="field in Fielded_TD_TableDesign" :key="field.columnName"
+                :label="field.columnComment" :prop="field.columnName">
                 <template #default="{ row }" v-if="field.type == 'lv'">
                     {{ field.lvs[row[field.columnName]] }}
                 </template>
@@ -863,7 +886,8 @@ const VIT_notExist = () => {
                         v-if="mixedTableDesign.dataStatus == '0'">保存</el-button>
                     <el-button type="primary" @click="SBM_createTableAndEntity"
                         v-if="mixedTableDesign.dataStatus == '0'">创建表和实体类</el-button>
-                    <el-button type="primary" @click="SBM_createTableAndEntity('草稿')">查看最新建表语句</el-button>
+                    <el-button type="primary" @click="ACT_showLastSql"
+                        v-if="mixedTableDesign.dataStatus == '1'">查看最新建表语句</el-button>
                 </div>
             </template>
 
@@ -878,6 +902,18 @@ const VIT_notExist = () => {
             {{ mixedTableDesign }}
         </el-drawer>
     </el-card>
+
+    <el-dialog v-model="DLG_lastSql" title="最新建表SQL" width="1200">
+        <pre v-highlight="mixedTableDesign.last_tableDesignSql.lastCreateSql" class="sql-display"></pre>
+        <template #footer>
+            <div class="dialog-footer">
+                <el-button @click="DLG_lastSql = false">关闭</el-button>
+                <el-button type="primary" @click="handleCopy">
+                    复制
+                </el-button>
+            </div>
+        </template>
+    </el-dialog>
 </template>
 <style lang="scss" scoped>
 .page-container {
@@ -921,5 +957,14 @@ const VIT_notExist = () => {
 .el-form-item.is-error .el-checkbox-group {
     border: 1px solid red;
     border-radius: 4px;
+}
+
+.sql-display {
+    font-family: 'Fira Code', monospace;
+    padding: 15px;
+    border-radius: 5px;
+    background-color: #f8f8f8;
+    white-space: pre-wrap;
+    overflow-x: auto;
 }
 </style>
