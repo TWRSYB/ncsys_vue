@@ -1,9 +1,15 @@
 <script setup>
 import avatar from '@/assets/default.png'
+import SVG_Database from '@/components/svg/SVG_Database.vue';
+import SVG_PersonInfo from '@/components/svg/SVG_PersonInfo.vue';
+import SVG_User from '@/components/svg/SVG_User.vue';
 import { useTokenStore } from '@/stores/token';
+import { useUserInfoStore } from '@/stores/userInfo';
+import { onMounted } from 'vue';
 
 const router = useRouter();
-
+const userInfoStore = useUserInfoStore()
+const tokenStore = useTokenStore()
 // 折叠导航栏
 const isCollapse = ref(false)
 // const handleOpen = (key, keyPath) => {
@@ -12,13 +18,34 @@ const isCollapse = ref(false)
 // const handleClose = (key, keyPath) => {
 //     console.log(key, keyPath)
 // }
- const ACT_logout = () => {
+const ACT_logout = () => {
     // 清除token
-    useTokenStore().removeToken();
+    tokenStore.removeToken();
+    userInfoStore.removeInfo();
     // 跳转到登录页
     router.push('/login');
 
 }
+
+
+
+const ASK_getUserInfo = async () => {
+    // 获取用户信息
+    $Requests.get('/user/getUserInfo')
+        .then(res => {
+            if (res.code === 200) {
+                // 成功获取用户信息
+                userInfoStore.setInfo(res.data);
+            }
+        })
+
+}
+
+onMounted(() => {
+    // 页面加载时获取用户信息
+    ASK_getUserInfo();
+    
+});
 
 
 </script>
@@ -38,7 +65,8 @@ const isCollapse = ref(false)
                 </div>
             </div>
 
-            <el-menu default-active="2" class="el-menu-vertical-demo" :collapse="isCollapse" router>
+            <el-menu :default-active="router.currentRoute.value.path" class="el-menu-vertical-demo" :collapse="isCollapse" router>
+                
 
                 <el-sub-menu index="1">
                     <template #title>
@@ -47,8 +75,18 @@ const isCollapse = ref(false)
                         </el-icon>
                         <span>系统设计</span>
                     </template>
-                    <el-menu-item index="/sys/UserManage">用户管理</el-menu-item>
-                    <el-menu-item index="/sys/DbDesign">数据库设计</el-menu-item>
+                    <el-menu-item index="/sys/UserManage">
+                        <el-icon>
+                            <SVG_User />
+                        </el-icon>
+                        <span>用户管理</span>
+                    </el-menu-item>
+                    <el-menu-item index="/sys/DbDesign">
+                        <el-icon>
+                            <SVG_Database />
+                        </el-icon>
+                        <span>数据库设计</span>
+                    </el-menu-item>
                     <!-- <el-menu-item-group title="功能分组1">
                         <template #title><span>系统设计</span></template>
                     </el-menu-item-group>
@@ -119,6 +157,12 @@ const isCollapse = ref(false)
                     </el-icon>
                     <template #title>耕种</template>
                 </el-menu-item>
+                <el-menu-item index="/Person/PersonInfo">
+                    <el-icon>
+                        <SVG_PersonInfo />
+                    </el-icon>
+                    <template #title>人员信息维护</template>
+                </el-menu-item>
             </el-menu>
         </div>
 
@@ -127,7 +171,7 @@ const isCollapse = ref(false)
         <el-container>
             <!-- 头部区域 -->
             <el-header>
-                <div>黑马程序员：<strong>东哥</strong></div>
+                <div>{{userInfoStore.info.roleCode}}：<strong>{{ userInfoStore.info.userName }}</strong></div>
                 <el-dropdown placement="bottom-end">
                     <span class="el-dropdown__box">
                         <el-avatar :src="avatar" />
@@ -137,10 +181,11 @@ const isCollapse = ref(false)
                     </span>
                     <template #dropdown>
                         <el-dropdown-menu>
-                            <el-dropdown-item command="profile" icon="User">基本资料</el-dropdown-item>
-                            <el-dropdown-item command="avatar" icon="Crop">更换头像</el-dropdown-item>
-                            <el-dropdown-item command="password" icon="EditPen">重置密码</el-dropdown-item>
-                            <el-dropdown-item command="logout" icon="SwitchButton" @click="ACT_logout">退出登录</el-dropdown-item>
+                            <el-dropdown-item command="userInfo" icon="User" @click="router.push('/User/UserInfo')">基本资料</el-dropdown-item>
+                            <!-- <el-dropdown-item command="avatar" icon="Crop">更换头像</el-dropdown-item> -->
+                            <el-dropdown-item command="changePassword" icon="Lock">修改密码</el-dropdown-item>
+                            <el-dropdown-item command="logout" icon="SwitchButton"
+                                @click="ACT_logout">退出登录</el-dropdown-item>
                         </el-dropdown-menu>
                     </template>
                 </el-dropdown>
@@ -150,7 +195,7 @@ const isCollapse = ref(false)
                 <router-view></router-view>
             </el-main>
             <!-- 底部区域 -->
-            <el-footer>大事件 ©2023 Created by 黑马程序员</el-footer>
+            <el-footer><span style="font-family: 'Font_xinshu';font-size: 20px;">祁县东城</span>&nbsp;&nbsp;©2025 Created by 黑牛程序员</el-footer>
         </el-container>
     </el-container>
 </template>

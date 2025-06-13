@@ -18,6 +18,10 @@ onMounted(() => {
     getTableDesignList();
 })
 
+// 添加列类型判断
+const Fielded_TD_TableDesign = computed(() => {
+    return TD_TableDesign.value.filter(field => !['createUser', 'createTime', 'updateUser', 'updateTime'].includes(field.columnName))
+})
 
 
 
@@ -47,8 +51,9 @@ const init_mixedTableDesign = () => {
         tableName: '',
         pre_tableName: '',
         sub_tableName: '',
-        dataStatus: 0,
+        dataStatus: '0',
         list_tableDesignColumn: [],
+        list_uniqueKey: [],
         last_tableDesignSql: {}
     }
 }
@@ -71,8 +76,6 @@ const ACT_showTableDesign = (row) => {
             mixedTableDesign.value.sub_tableName = response.data.tableName.substring(response.data.tableName.indexOf('_') + 1)
             // mixedTableDesign.value.pre_tableName = response.data.tableName.substring(0, response.data.tableName.indexOf('_'))
         })
-    }).catch(err => {
-        console.log(err);
     })
 }
 
@@ -167,8 +170,8 @@ const SBM_createTableAndEntity = () => {
                 }
             }
 
-            // 调用接口,完成登录
-            $Requests.post('/tableDesign/createTableAndEntity', mixedTableDesign.value)
+            // 调用接口,完成建表
+            $Requests.post('/tableDesign/createTableAndEntity', mixedTableDesign.value, { showSuccessMsg: true })
                 .then((response) => {
                     if (response.code === 200) {
                         // 跳转首页
@@ -289,7 +292,6 @@ const option_YN = { "Y": "是", "N": "否" }
 
 // 监听 B 和 C 的变化，自动更新 A
 watch([() => mixedTableDesign.value.tableType, () => mixedTableDesign.value.sub_tableName], ([type, sub]) => {
-    console.log(type, sub);
 
     let pre_tableName = type ? type + '_' : ''
     mixedTableDesign.value.pre_tableName = pre_tableName
@@ -452,10 +454,112 @@ const confirm_Enum = (row, tag, index) => {
     row.tempEnum = ''
 }
 
+
+//添加唯一约束
+const ACT_addUniqueKey = () => {
+    if (mixedTableDesign.value.list_tableDesignColumn.length == 0) {
+        ElMessage.warning('请先添加字段');
+        return;
+    }
+    if (!mixedTableDesign.value.list_uniqueKey) {
+        mixedTableDesign.value.list_uniqueKey = [];
+    }
+    mixedTableDesign.value.list_uniqueKey.push({
+        dataStatus: '0',
+        uniqueKeyName: '新建唯一约束',
+        uniqueKeyColumnArray: [],
+        uniqueKeyColumn: '',
+    });
+}
+
+//删除唯一约束
+const ACT_deleteUniqueKey = (row, index) => {
+    mixedTableDesign.value.list_uniqueKey.splice(index, 1)
+}
+
+/**
+ * 提交新增唯一约束
+ */
+const SBM_addUniqueKey = (row, index) => {
+    form_addTable.value.validate((valid, fields) => {
+        if (!valid) {
+            ElMessage.warning('请检查输入项');
+            return false
+        }
+
+        
+        const key = mixedTableDesign.value.list_tableDesignColumn.filter((item) => item.keyYn == 'Y').map((item) => item.columnName)
+        if ($Com.arraysEqual(key, row.uniqueKeyColumnArray)) {
+            ElMessage.warning('唯一约束不能与主键重复');
+            return false
+        }
+
+        
+        const uniqueKeys = mixedTableDesign.value.list_uniqueKey.filter((item) => item.dataStatus == '1').map((item) => item.uniqueKeyColumnArray)
+        for (const uniqueKey of uniqueKeys) {
+            if ($Com.arraysEqual(uniqueKey, row.uniqueKeyColumnArray)) {
+                ElMessage.warning('唯一约束不能与已存在的唯一约束重复');
+                return false
+            }
+        }
+
+        row.uniqueKeyColumn = JSON.stringify(row.uniqueKeyColumnArray)
+        row.tableId = mixedTableDesign.value.tableId
+        row.tableName = mixedTableDesign.value.tableName
+
+        // 调用接口, 完成添加唯一约束
+        $Requests.post('/tableDesign/addUniqueKey', row, { showSuccessMsg: true })
+            .then((response) => {
+                if (response.code === 200) {
+                    // 添加列成功, 刷新编辑页面
+                    ACT_editTableDesign(row.tableName)
+                }
+            })
+
+    })
+
+}
+
+
+/**
+ * 提交删除表
+ */
+const SBM_deleteUniqueKey = (row) => {
+    ElMessageBox.confirm(
+        '警告, 确定要删除这个唯一约束吗?',
+        '提示',
+        {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning',
+        }
+    ).then(() => {
+
+        // 调用接口,完成登录
+        $Requests.post('/tableDesign/deleteUniqueKey', row, { showSuccessMsg: true })
+            .then((response) => {
+                if (response.code === 200) {
+                    getTableDesignList()
+                }
+            })
+    })
+}
+
+
+
+
+
+
 // 定义可复用的校验函数（接收额外参数）
 const VIT_required = (param) => {
     return {
         validator: (rule, value, callback) => {
+
+            if (Array.isArray(param) && param.length === 0) {
+                callback(new Error('请至少选择一项'));
+                return;
+            }
+
             if (!param) {
                 callback(new Error());
             } else {
@@ -485,10 +589,14 @@ const VIT_notExist = () => {
                 </div>
             </div>
         </template>
-        <el-table :data="list_tableDesign" style="width: 100%">
+         <!-- show-overflow-tooltip -->
+        <el-table :data="list_tableDesign" border style="width: 100%">
             <el-table-column width="55px" label="序号" type="index"> </el-table-column>
-            <el-table-column v-for="field in TD_TableDesign" :label="field.columnComment" :key="field.columnName"
-                :prop="field.columnName"></el-table-column>
+            <el-table-column v-for="field in Fielded_TD_TableDesign" :key="field.columnName" :label="field.columnComment" :prop="field.columnName">
+                <template #default="{ row }" v-if="field.type == 'lv'">
+                    {{ field.lvs[row[field.columnName]] }}
+                </template>
+            </el-table-column>
             <el-table-column label="操作" width="100">
                 <template #default="{ row }">
                     <el-icon style="margin: 0 3px;" @click="ACT_showTableDesign(row)">
@@ -514,6 +622,8 @@ const VIT_notExist = () => {
             <!-- 新增表表单 -->
             <el-form ref="form_addTable" :model="mixedTableDesign" label-width="100px" :rules="rules"
                 :disabled="title_Drawer == '表设计详情'">
+                <el-divider content-position="left" style="margin-top: 20px;">表信息</el-divider>
+
                 <el-form-item class="itemOne" label="表分类" prop="tableType">
                     <el-radio-group v-model="mixedTableDesign.tableType" v-if="mixedTableDesign.dataStatus == '0'">
                         <el-radio-button v-for="(value, key, index) in option_tableType" :value="key" :key="key">
@@ -536,8 +646,13 @@ const VIT_notExist = () => {
                         v-if="mixedTableDesign.dataStatus == '0'"></el-input>
                     <span v-else>{{ mixedTableDesign.tableComment }}</span>
                 </el-form-item>
-                <!-- 数据 -->
-                <el-table :data="mixedTableDesign.list_tableDesignColumn" table-layout="auto">
+
+
+                <!-- 字段信息 -->
+                <el-divider content-position="left" style="margin-top: 70px;">字段信息</el-divider>
+
+
+                <el-table :data="mixedTableDesign.list_tableDesignColumn" border table-layout="auto">
                     <el-table-column label="序号" prop="fieldIndex" width="55" align="center">
                         <template #default="{ row, $index }">
                             {{ row.ordinalPosition || row.fieldIndex }}
@@ -697,11 +812,53 @@ const VIT_notExist = () => {
                         </template>
                     </el-table-column>
                 </el-table>
+
+                <!-- 唯一约束 -->
+                <el-divider content-position="left" style="margin-top: 70px;">唯一约束</el-divider>
+
+                <el-table :data="mixedTableDesign.list_uniqueKey" table-layout="auto">
+                    <el-table-column prop="uniqueKeyName" label="约束名称" align="center">
+                    </el-table-column>
+                    <el-table-column label="约束字段" align="center">
+                        <template #default="{ row, $index }">
+                            <el-form-item class="itemOne" prop="uniqueKeyColumnArray"
+                                v-if="mixedTableDesign.dataStatus == '0' || row.dataStatus != 1"
+                                :rules="[VIT_required(row.uniqueKeyColumnArray)]">
+                                <el-checkbox-group v-model="row.uniqueKeyColumnArray">
+                                    <el-checkbox-button
+                                        v-for="(value, index) in mixedTableDesign.list_tableDesignColumn"
+                                        :value="value.columnName" :key="index">
+                                        {{ value.columnName }}
+                                    </el-checkbox-button>
+                                </el-checkbox-group>
+                            </el-form-item>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" align="center" width="170">
+                        <template #default="{ row, $index }">
+                            <template v-if="mixedTableDesign.dataStatus === '0'">
+                                <el-button @click="ACT_deleteUniqueKey(row, $index)" size="small">删除</el-button>
+                            </template>
+                            <template v-else>
+                                <el-button @click="SBM_addUniqueKey(row, $index)" v-if="row.dataStatus === '0'"
+                                    type="primary" size="small">提交添加</el-button>
+                                <el-button @click="ACT_deleteUniqueKey(row, $index)" v-if="row.dataStatus === '0'"
+                                    size="small">取消</el-button>
+                                <el-button @click="SBM_deleteUniqueKey(row, $index)" v-if="row.dataStatus === '1'"
+                                    size="small">删除</el-button>
+                            </template>
+                        </template>
+                    </el-table-column>
+
+                </el-table>
+
             </el-form>
 
             <template #footer>
                 <div style="flex: auto">
-                    <el-button type="primary" @click="addColumn()">添加字段</el-button>
+                    <el-button type="primary" @click="addColumn()" v-if="title_Drawer != '表设计详情'">添加字段</el-button>
+                    <el-button type="primary" @click="ACT_addUniqueKey()"
+                        v-if="title_Drawer != '表设计详情'">添加唯一约束</el-button>
                     <el-button type="primary" @click="SBM_saveTableDesign"
                         v-if="mixedTableDesign.dataStatus == '0'">保存</el-button>
                     <el-button type="primary" @click="SBM_createTableAndEntity"
@@ -746,5 +903,23 @@ const VIT_notExist = () => {
         --font-size: 14px;
         margin-bottom: 0;
     }
+}
+
+:deep(.el-divider--horizontal) {
+    border-top: 2px var(--el-border-color) var(--el-border-style);
+    margin: 35px 0;
+
+    .el-divider__text {
+        font-size: 20px;
+        transform: translateY(-50%);
+        font-weight: bold;
+        color: #7c7f86;
+    }
+}
+
+
+.el-form-item.is-error .el-checkbox-group {
+    border: 1px solid red;
+    border-radius: 4px;
 }
 </style>

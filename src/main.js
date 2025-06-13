@@ -1,4 +1,5 @@
 import './assets/main.scss'
+import '@/assets/css/fonts.css' // 引入字体样式
 
 import { createApp } from 'vue'
 import ElementPlus from 'element-plus'
