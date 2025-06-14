@@ -110,37 +110,45 @@ const ACT_addTable = () => {
 
 
 
+const dealWithMixedTableDesignBeforeSBM = () => {
+    // 处理 mixedTableDesign 的数据, 确保提交前的数据格式正确
+    for (const tableDesignColumn of mixedTableDesign.value.list_tableDesignColumn) {
+        const fieldEnumArray = tableDesignColumn.fieldEnumArray
+        if (fieldEnumArray && fieldEnumArray.length) {
+            tableDesignColumn.fieldEnum = JSON.stringify(fieldEnumArray)
+        } else {
+            tableDesignColumn.fieldEnum = null
+        }
+    }
 
+    for (const uniqueKey of mixedTableDesign.value.list_uniqueKey) {
+        uniqueKey.uniqueKeyColumn = JSON.stringify(uniqueKey.uniqueKeyColumnArray)
+    }
+}
 
 /**
  * 提交保存表设计
  */
-const SBM_saveTableDesign = async () => {
-    let valid = await form_addTable.value.validate((valid, fields) => {
+const SBM_saveTableDesign = () => {
+    form_addTable.value.validate((valid, fields) => {
         if (!valid) {
             ElMessage.warning('请检查输入项');
+            return false
         }
-        return valid
+
+        dealWithMixedTableDesignBeforeSBM()
+
+        // 调用接口保存数据库设计
+        $Requests.post('/tableDesign/saveTableDesign', mixedTableDesign.value, { showSuccessMsg: true })
+            .then((response) => {
+                if (response.code === 200) {
+                    // 保存成功, 刷新列表
+                    visibleDrawer.value = false
+                    getTableDesignList()
+                }
+            })
     })
 
-    if (valid) {
-
-        for (const tableDesignColumn of mixedTableDesign.value.list_tableDesignColumn) {
-            const fieldEnumArray = tableDesignColumn.fieldEnumArray
-            if (fieldEnumArray && fieldEnumArray.length) {
-                tableDesignColumn.fieldEnum = JSON.stringify(fieldEnumArray)
-            } else {
-                tableDesignColumn.fieldEnum = null
-            }
-        }
-
-        // 调用接口,完成登录
-        let result = await saveTableDesignService(mixedTableDesign.value);
-        ElMessage.success(result.message || '登录成功')
-        // 跳转首页
-        visibleDrawer.value = false
-        getTableDesignList()
-    }
 }
 
 /**
@@ -161,14 +169,8 @@ const SBM_createTableAndEntity = () => {
                 type: 'warning',
             }
         ).then(() => {
-            for (const tableDesignColumn of mixedTableDesign.value.list_tableDesignColumn) {
-                const fieldEnumArray = tableDesignColumn.fieldEnumArray
-                if (fieldEnumArray && fieldEnumArray.length) {
-                    tableDesignColumn.fieldEnum = JSON.stringify(fieldEnumArray)
-                } else {
-                    tableDesignColumn.fieldEnum = null
-                }
-            }
+
+            dealWithMixedTableDesignBeforeSBM()
 
             // 调用接口,完成建表
             $Requests.post('/tableDesign/createTableAndEntity', mixedTableDesign.value, { showSuccessMsg: true })
@@ -535,6 +537,8 @@ const SBM_deleteUniqueKey = (row) => {
         }
     ).then(() => {
 
+        ElMessage.warning('功能还没开发');
+
         // 调用接口,完成登录
         $Requests.post('/tableDesign/deleteUniqueKey', row, { showSuccessMsg: true })
             .then((response) => {
@@ -681,7 +685,7 @@ const VIT_notExist = () => {
                             {{ row.ordinalPosition || row.fieldIndex }}
                         </template>
                     </el-table-column>
-                    <el-table-column prop="dataStatus" label="状态" width="100" align="center">
+                    <el-table-column prop="dataStatus" label="状态" width="70" align="center">
                         <template #default="{ row }">
                             <span v-if="mixedTableDesign.dataStatus == '0'">待建表</span>
                             <span v-else-if="row.dataStatus == '0'">添加中</span>
@@ -845,9 +849,8 @@ const VIT_notExist = () => {
                     <el-table-column label="约束字段" align="center">
                         <template #default="{ row, $index }">
                             <el-form-item class="itemOne" prop="uniqueKeyColumnArray"
-                                v-if="mixedTableDesign.dataStatus == '0' || row.dataStatus != 1"
                                 :rules="[VIT_required(row.uniqueKeyColumnArray)]">
-                                <el-checkbox-group v-model="row.uniqueKeyColumnArray">
+                                <el-checkbox-group v-model="row.uniqueKeyColumnArray" :disabled="row.dataStatus != '0'">
                                     <el-checkbox-button
                                         v-for="(value, index) in mixedTableDesign.list_tableDesignColumn"
                                         :value="value.columnName" :key="index">
@@ -928,8 +931,8 @@ const VIT_notExist = () => {
 }
 
 /* 穿透 scoped 作用域，直接修改子组件样式 */
-.el-table {
-    :deep(.el-form-item__content) {
+:deep(.el-table) {
+    .el-form-item__content {
         margin-left: 0 !important;
         justify-content: center;
     }
@@ -938,6 +941,17 @@ const VIT_notExist = () => {
         display: flex;
         --font-size: 14px;
         margin-bottom: 0;
+    }
+
+    .el-checkbox-button.is-disabled.is-checked .el-checkbox-button__inner {
+        // background-color: var(--el-checkbox-button-checked-bg-color);
+        // background-color: hsl(0, 59%, 45%);
+        background-color: hsl(207, 100%, 80%); 
+        background-image: none;
+        border-color: var(--el-button-disabled-border-color, var(--el-border-color-light));
+        box-shadow: none;
+        color: hsl(222, 6%, 100%);
+        cursor: not-allowed;
     }
 }
 
