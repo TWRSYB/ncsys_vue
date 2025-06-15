@@ -43,7 +43,8 @@ app.use(pinia) // 使用 Pinia 状态管理 (挂载 Pinia 实例到 Vue 应用)
 app.use(router) // 使用路由
 
 // 全局属性
-// app.config.globalProperties.$deepClone = deepClone
+app.config.globalProperties.$Com = comUtils // 挂载 ComUtils 到全局属性
+
 
 // 1. 定义全局指令
 app.directive('input-filter', inputFilterDirective); // 注册input过滤指令

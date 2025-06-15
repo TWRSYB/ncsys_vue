@@ -85,6 +85,19 @@ class ComUtils {
         const sorted2 = [...arr2].sort();
         return sorted1.every((val, index) => val === sorted2[index]);
     }
+
+    /**
+     * @description 过滤表格设计
+     * @param {TD} tableDesign 数据库设计
+     * @param {Array} disabledFields 需要过滤掉的字段列表
+     * @param {string[]} [disabledFields=['createUser', 'createTime', 'updateUser', 'updateTime']] 默认需要过滤的字段
+     * @returns 过滤后的数据库设计
+     * @description 过滤掉不需要的字段（如 createUser、createTime、updateUser、updateTime）
+     * @description 该函数用于在表格设计中排除一些不需要的字段，以便于前端展示和操作。
+     */
+    TD_filter(tableDesign, disabledFields = ['createUser', 'createTime', 'updateUser', 'updateTime']) {
+        return tableDesign.filter(field => !disabledFields.includes(field.columnName))
+    }
     
 }
 
