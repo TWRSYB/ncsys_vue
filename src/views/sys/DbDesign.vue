@@ -1,34 +1,51 @@
 <script setup>
 
-//获取主列表
-import { getTableDesignListService, getTableDesignService, saveTableDesignService } from '@/api/Db.js'
 
-const getTableDesign = async () => {
-    let result = await getTableDesignService('s_table_design');
-    TD_TableDesign.value = result.data;
-    result = await getTableDesignService('s_table_design_column');
-    TD_TableDesignColumn.value = result.data;
-    result = await getTableDesignService('s_table_design_sql');
-    TD_TableDesignSql.value = result.data;
+const INIT_getTableDesign = () => {
+    // 获取表设计
+    $Requests.get('/tableDesign/getTableDesign', {params: {tableName: 's_table_design'}})
+        .then((response) => {
+            if (response.code === 200) {
+                TD_TableDesign.value = response.data;
+            }
+        })
+    $Requests.get('/tableDesign/getTableDesign', {params: {tableName: 's_table_design_column'}})
+        .then((response) => {
+            if (response.code === 200) {
+                TD_TableDesignColumn.value = response.data;
+            }
+        })
+    $Requests.get('/tableDesign/getTableDesign', {params: {tableName: 's_table_design_sql'}})
+        .then((response) => {
+            if (response.code === 200) {
+                TD_TableDesignSql.value = response.data;
+            }
+        })
 }
 
 onMounted(() => {
-    // 获取表设计
-    getTableDesign();
-    getTableDesignList();
+    // 页面加载时获取表设计
+    INIT_getTableDesign();
+    // 获取表设计列表
+    ACT_getTableDesignList();
 })
 
-// 添加列类型判断
+// 过滤表设计
 const Fielded_TD_TableDesign = computed(() => {
     return TD_TableDesign.value.filter(field => !['createUser', 'createTime', 'updateUser', 'updateTime'].includes(field.columnName))
 })
 
 
 
-const getTableDesignList = async () => {
-    let result = await getTableDesignListService();
+const ACT_getTableDesignList = () => {
 
-    list_tableDesign.value = result.data;
+    // 获取表设计列表
+    $Requests.get('/tableDesign/getTableDesignList')
+        .then((response) => {
+            if (response.code === 200) {
+                list_tableDesign.value = response.data;
+            }
+        })
 }
 
 
@@ -144,7 +161,7 @@ const SBM_saveTableDesign = () => {
                 if (response.code === 200) {
                     // 保存成功, 刷新列表
                     visibleDrawer.value = false
-                    getTableDesignList()
+                    ACT_getTableDesignList()
                 }
             })
     })
@@ -178,7 +195,7 @@ const SBM_createTableAndEntity = () => {
                     if (response.code === 200) {
                         // 跳转首页
                         visibleDrawer.value = false
-                        getTableDesignList()
+                        ACT_getTableDesignList()
                     }
                 })
         })
@@ -204,7 +221,7 @@ const SBM_deleteTableDesign = (row) => {
         $Requests.post('/tableDesign/deleteTableDesign', row, { showSuccessMsg: true })
             .then((response) => {
                 if (response.code === 200) {
-                    getTableDesignList()
+                    ACT_getTableDesignList()
                 }
             })
     })
@@ -235,7 +252,7 @@ const SBM_addColumn = (row, index) => {
             .then((response) => {
                 if (response.code === 200) {
                     // 添加列成功, 刷新编辑页面
-                    ACT_editTableDesign(row.tableName)
+                    mixedTableDesign.value.list_tableDesignColumn[index] = response.data
                 }
             })
     })
@@ -245,7 +262,7 @@ const SBM_addColumn = (row, index) => {
 /**
  * 提交修改列
  */
-const SMB_modifyColumn = (row, index) => {
+const SBM_modifyColumn = (row, index) => {
     form_addTable.value.validate((valid, fields) => {
         if (!valid) {
             ElMessage.warning('请检查输入项');
@@ -514,7 +531,7 @@ const SBM_addUniqueKey = (row, index) => {
             .then((response) => {
                 if (response.code === 200) {
                     // 添加列成功, 刷新编辑页面
-                    ACT_editTableDesign(row.tableName)
+                    mixedTableDesign.value.list_uniqueKey[index] = response.data
                 }
             })
 
@@ -524,9 +541,9 @@ const SBM_addUniqueKey = (row, index) => {
 
 
 /**
- * 提交删除表
+ * 提交删除唯一约束
  */
-const SBM_deleteUniqueKey = (row) => {
+const SBM_deleteUniqueKey = (row, index) => {
     ElMessageBox.confirm(
         '警告, 确定要删除这个唯一约束吗?',
         '提示',
@@ -537,13 +554,13 @@ const SBM_deleteUniqueKey = (row) => {
         }
     ).then(() => {
 
-        ElMessage.warning('功能还没开发');
+        row.tableName = mixedTableDesign.value.tableName
 
         // 调用接口,完成登录
         $Requests.post('/tableDesign/deleteUniqueKey', row, { showSuccessMsg: true })
             .then((response) => {
                 if (response.code === 200) {
-                    getTableDesignList()
+                    mixedTableDesign.value.list_uniqueKey.splice(index, 1);
                 }
             })
     })
@@ -552,12 +569,20 @@ const SBM_deleteUniqueKey = (row) => {
 
 const DLG_lastSql = ref(false);
 
+// 查看最新建表SQL
 const ACT_showLastSql = () => {
-    if (!mixedTableDesign.value.last_tableDesignSql || !mixedTableDesign.value.last_tableDesignSql.lastCreateSql) {
-        ElMessage.warning('没有上次生成的SQL');
-        return;
-    }
-    DLG_lastSql.value = true;
+    $Requests.get('/tableDesignSql/getLastTableDesignSql', { params: { tableId: mixedTableDesign.value.tableId } })
+        .then((response) => {
+            if (response.code === 200) {
+                mixedTableDesign.value.last_tableDesignSql = response.data;
+                if (!mixedTableDesign.value.last_tableDesignSql || !mixedTableDesign.value.last_tableDesignSql.lastCreateSql) {
+                    ElMessage.warning('没有上次生成的SQL');
+                    return;
+                }
+                DLG_lastSql.value = true;
+            }
+        })
+
 }
 
 
@@ -610,7 +635,7 @@ const VIT_notExist = () => {
             <div class="header">
                 <span>数据库管理</span>
                 <div class="extra">
-                    <el-button type="primary" @click="getTableDesignList">刷新</el-button>
+                    <el-button type="primary" @click="ACT_getTableDesignList">刷新</el-button>
                     <el-button type="primary" @click="ACT_addTable">新增表</el-button>
                 </div>
             </div>
@@ -831,7 +856,7 @@ const VIT_notExist = () => {
                                     size="small">取消</el-button>
                                 <el-button @click="ACT_modifyColumn(row, $index)" v-if="row.dataStatus === '1'"
                                     size="small">修改</el-button>
-                                <el-button @click="SMB_modifyColumn(row, $index)" v-if="row.dataStatus === '3'"
+                                <el-button @click="SBM_modifyColumn(row, $index)" v-if="row.dataStatus === '3'"
                                     type="primary" size="small">提交修改</el-button>
                                 <el-button @click="ACT_cancelChangeColumn(row, $index)" v-if="row.dataStatus === '3'"
                                     size="small">取消</el-button>
@@ -946,7 +971,7 @@ const VIT_notExist = () => {
     .el-checkbox-button.is-disabled.is-checked .el-checkbox-button__inner {
         // background-color: var(--el-checkbox-button-checked-bg-color);
         // background-color: hsl(0, 59%, 45%);
-        background-color: hsl(207, 100%, 80%); 
+        background-color: hsl(207, 100%, 80%);
         background-image: none;
         border-color: var(--el-button-disabled-border-color, var(--el-border-color-light));
         box-shadow: none;
