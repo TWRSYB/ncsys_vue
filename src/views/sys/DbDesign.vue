@@ -3,19 +3,19 @@
 
 const INIT_getTableDesign = () => {
     // 获取表设计
-    $Requests.get('/tableDesign/getTableDesign', {params: {tableName: 's_table_design'}})
+    $Requests.get('/tableDesign/getTableDesign', { params: { tableName: 's_table_design' } })
         .then((response) => {
             if (response.code === 200) {
                 TD_TableDesign.value = response.data;
             }
         })
-    $Requests.get('/tableDesign/getTableDesign', {params: {tableName: 's_table_design_column'}})
+    $Requests.get('/tableDesign/getTableDesign', { params: { tableName: 's_table_design_column' } })
         .then((response) => {
             if (response.code === 200) {
                 TD_TableDesignColumn.value = response.data;
             }
         })
-    $Requests.get('/tableDesign/getTableDesign', {params: {tableName: 's_table_design_sql'}})
+    $Requests.get('/tableDesign/getTableDesign', { params: { tableName: 's_table_design_sql' } })
         .then((response) => {
             if (response.code === 200) {
                 TD_TableDesignSql.value = response.data;
@@ -132,14 +132,14 @@ const dealWithMixedTableDesignBeforeSBM = () => {
     for (const tableDesignColumn of mixedTableDesign.value.list_tableDesignColumn) {
         const fieldEnumArray = tableDesignColumn.fieldEnumArray
         if (fieldEnumArray && fieldEnumArray.length) {
-            tableDesignColumn.fieldEnum = JSON.stringify(fieldEnumArray)
+            tableDesignColumn.fieldEnum = fieldEnumArray.join(',')
         } else {
             tableDesignColumn.fieldEnum = null
         }
     }
 
     for (const uniqueKey of mixedTableDesign.value.list_uniqueKey) {
-        uniqueKey.uniqueKeyColumn = JSON.stringify(uniqueKey.uniqueKeyColumnArray)
+        uniqueKey.uniqueKeyColumn = uniqueKey.uniqueKeyColumnArray.join(',')
     }
 }
 
@@ -240,7 +240,7 @@ const SBM_addColumn = (row, index) => {
 
         const fieldEnumArray = row.fieldEnumArray
         if (fieldEnumArray && fieldEnumArray.length) {
-            row.fieldEnum = JSON.stringify(fieldEnumArray)
+            row.fieldEnum = fieldEnumArray.join(',')
         } else {
             row.fieldEnum = null
         }
@@ -271,7 +271,7 @@ const SBM_modifyColumn = (row, index) => {
 
         const fieldEnumArray = row.fieldEnumArray
         if (fieldEnumArray && fieldEnumArray.length) {
-            row.fieldEnum = JSON.stringify(fieldEnumArray)
+            row.fieldEnum = fieldEnumArray.join(',')
         } else {
             row.fieldEnum = null
         }
@@ -522,7 +522,7 @@ const SBM_addUniqueKey = (row, index) => {
             }
         }
 
-        row.uniqueKeyColumn = JSON.stringify(row.uniqueKeyColumnArray)
+        row.uniqueKeyColumn = row.uniqueKeyColumnArray.join(',')
         row.tableId = mixedTableDesign.value.tableId
         row.tableName = mixedTableDesign.value.tableName
 
@@ -598,6 +598,32 @@ const handleCopy = async () => {
 };
 
 
+const DLG_generateTD = ref(false);
+
+const tableName = ref('');
+
+const ACT_generateTD = () => {
+    DLG_generateTD.value = true
+    tableName.value = ''
+}
+
+/**
+ * 提交从现有表生成表设计
+ */
+const SBM_generateTD = () => {
+    if (!tableName.value || tableName.value.trim() === '') {
+        ElMessage.warning('请输入现有表名');
+        return false
+    }
+
+    $Requests.get('/tableDesign/generateTableDesign', { params: { tableName: tableName.value }, showSuccessMsg: true })
+        .then((response) => {
+            if (response.code === 200) {
+                DLG_generateTD.value = false
+                ACT_getTableDesignList()
+            }
+        })
+}
 
 
 
@@ -637,6 +663,7 @@ const VIT_notExist = () => {
                 <div class="extra">
                     <el-button type="primary" @click="ACT_getTableDesignList">刷新</el-button>
                     <el-button type="primary" @click="ACT_addTable">新增表</el-button>
+                    <el-button type="primary" @click="ACT_generateTD">从现有表生成表设计</el-button>
                 </div>
             </div>
         </template>
@@ -939,6 +966,18 @@ const VIT_notExist = () => {
                 <el-button type="primary" @click="handleCopy">
                     复制
                 </el-button>
+            </div>
+        </template>
+    </el-dialog>
+
+    <el-dialog v-model="DLG_generateTD" title="从现有表生成表设计" width="500">
+        <el-input v-model="tableName" placeholder="请输入现有表名"
+            v-input-filter="{ regex: /[^0-9a-zA-Z_]/g, maxLength: 40, upOrLower: 'lower', otherMothed: (value) => value.replace(/^_+/, '').replace('__', '_') }"
+            @blur="handleBlur">
+        </el-input>
+        <template #footer>
+            <div class="dialog-footer">
+                <el-button type="primary" @click="SBM_generateTD">生成表设计</el-button>
             </div>
         </template>
     </el-dialog>
