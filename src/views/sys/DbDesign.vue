@@ -262,7 +262,7 @@ const SBM_addColumn = (row, index) => {
 /**
  * 提交修改列
  */
-const SBM_modifyColumn = (row, index) => {
+const SBM_changeColumn = (row, index) => {
     form_addTable.value.validate((valid, fields) => {
         if (!valid) {
             ElMessage.warning('请检查输入项');
@@ -279,7 +279,7 @@ const SBM_modifyColumn = (row, index) => {
         row.tableId = mixedTableDesign.value.tableId
         row.tableName = mixedTableDesign.value.tableName
 
-        $Requests.post('/tableDesign/modifyColumn', row, { showSuccessMsg: true })
+        $Requests.post('/tableDesign/changeColumn', row, { showSuccessMsg: true })
             .then((response) => {
                 if (response.code === 200) {
                     // 修改列成功, 刷新编辑页面
@@ -381,7 +381,7 @@ const ACT_deleteColumn = (row, index) => {
 
 
 //修改字段
-const ACT_modifyColumn = (row, index) => {
+const ACT_changeColumn = (row, index) => {
     mixedTableDesign.value.tempColumn = $Com.deepClone(row);
     row.dataStatus = '3'
 }
@@ -887,9 +887,9 @@ const VIT_notExist = () => {
                                     type="primary" size="small">提交添加</el-button>
                                 <el-button @click="ACT_deleteColumn(row, $index)" v-if="row.dataStatus === '0'"
                                     size="small">取消</el-button>
-                                <el-button @click="ACT_modifyColumn(row, $index)" v-if="row.dataStatus === '1'"
+                                <el-button @click="ACT_changeColumn(row, $index)" v-if="row.dataStatus === '1'"
                                     size="small">修改</el-button>
-                                <el-button @click="SBM_modifyColumn(row, $index)" v-if="row.dataStatus === '3'"
+                                <el-button @click="SBM_changeColumn(row, $index)" v-if="row.dataStatus === '3'"
                                     type="primary" size="small">提交修改</el-button>
                                 <el-button @click="ACT_cancelChangeColumn(row, $index)" v-if="row.dataStatus === '3'"
                                     size="small">取消</el-button>
