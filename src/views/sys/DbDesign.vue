@@ -279,7 +279,13 @@ const SBM_modifyColumn = (row, index) => {
         row.tableId = mixedTableDesign.value.tableId
         row.tableName = mixedTableDesign.value.tableName
 
-        ElMessage.warning('功能还没开发');
+        $Requests.post('/tableDesign/modifyColumn', row, { showSuccessMsg: true })
+            .then((response) => {
+                if (response.code === 200) {
+                    // 修改列成功, 刷新编辑页面
+                    mixedTableDesign.value.list_tableDesignColumn[index] = response.data
+                }
+            })
 
     })
 
@@ -327,7 +333,7 @@ const handleBlur = (event) => {
 
 
 //添加列
-const addColumn = () => {
+const ACT_addColumn = () => {
     mixedTableDesign.value.list_tableDesignColumn.push(
         {
             dataStatus: '0',
@@ -871,7 +877,7 @@ const VIT_notExist = () => {
                             <span v-else>{{ row.defaultValue }}</span>
                         </template>
                     </el-table-column> -->
-                    <el-table-column label="操作" align="center" width="170">
+                    <el-table-column label="操作" align="center" width="170" v-if="title_Drawer != '表设计详情'">
                         <template #default="{ row, $index }">
                             <template v-if="mixedTableDesign.dataStatus === '0'">
                                 <el-button @click="ACT_deleteColumn(row, $index)" size="small">删除</el-button>
@@ -934,7 +940,7 @@ const VIT_notExist = () => {
 
             <template #footer>
                 <div style="flex: auto">
-                    <el-button type="primary" @click="addColumn()" v-if="title_Drawer != '表设计详情'">添加字段</el-button>
+                    <el-button type="primary" @click="ACT_addColumn()" v-if="title_Drawer != '表设计详情'">添加字段</el-button>
                     <el-button type="primary" @click="ACT_addUniqueKey()"
                         v-if="title_Drawer != '表设计详情'">添加唯一约束</el-button>
                     <el-button type="primary" @click="SBM_saveTableDesign"
