@@ -19,12 +19,7 @@ const isCollapse = ref(false)
 //     console.log(key, keyPath)
 // }
 const ACT_logout = () => {
-    // 清除token
-    tokenStore.removeToken();
-    userInfoStore.removeInfo();
-    // 跳转到登录页
-    router.push('/login');
-
+    $Requests.logout()
 }
 
 

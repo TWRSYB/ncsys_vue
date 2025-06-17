@@ -1,6 +1,7 @@
 // src/utils/request.js
 import axios from 'axios'
 import { useTokenStore } from '@/stores/token'
+import { useUserInfoStore } from '@/stores/userInfo'
 import router from '@/router' // 导入路由实例
 
 class Request {
@@ -12,9 +13,14 @@ class Request {
         // 请求拦截器
         this.instance.interceptors.request.use(
             (config) => {
-                // 添加token到headers
 
                 const tokenStore = useTokenStore();
+
+                if (!['/user/login', '/user/logout'].includes(config.url)) {
+                    tokenStore.checkToken(); // 检查token是否需要刷新
+                }
+
+                // 添加token到headers
                 const token = tokenStore.token
                 if (token) {
                     config.headers.Authorization = token
@@ -110,6 +116,19 @@ class Request {
 
     delete(url, config) {
         return this.request({ ...config, url, method: 'DELETE' })
+    }
+
+    logout() {
+        // 发送登出请求
+        request.get('/user/logout')
+        setTimeout(() => {
+            // 跳转到登录页
+            router.push('/login');
+            const userInfoStore = useUserInfoStore();
+            userInfoStore.removeInfo();// 清除用户信息
+            const tokenStore = useTokenStore();
+            tokenStore.removeToken() // 清除token
+        }, 50);
     }
 
     // 取消所有请求

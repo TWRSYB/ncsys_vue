@@ -1,5 +1,4 @@
 <script setup>
-import { userLoginService } from '@/api/user.js'
 import { useTokenStore } from '@/stores/token';
 
 const formData_login = ref({
@@ -23,24 +22,23 @@ const rules = {
 
 const router = useRouter();
 
-const login = async () => {
-
-    let valid = await form_login.value.validate((valid, fields) => {
+const login = () => {
+    
+    // 校验表单
+    form_login.value.validate((valid, fields) => {
         if (!valid) {
             ElMessage.warning('请检查输入项');
+            return false
         }
-        return valid
-    })
-
-    if (valid) {
         // 调用接口,完成登录
-        let result = await userLoginService(formData_login.value);
-        ElMessage.success(result.message || '登录成功')
-        // 将token存储到pinia中
-        useTokenStore().setToken(result.data);
-        // 跳转首页
-        router.push('/')
-    }
+        $Requests.post('/user/login', formData_login.value, { showSuccessMsg: true })
+            .then(result => {
+                // 将token存储到pinia中
+                useTokenStore().setToken(result.data);
+                // 跳转首页
+                router.push('/')
+            })
+    })
 
 }
 
