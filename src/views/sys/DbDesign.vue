@@ -738,7 +738,7 @@ const VIT_notExist = () => {
                 <el-form-item label="表名" prop="sub_tableName" style="width: 700px">
                     <el-input v-model="mixedTableDesign.sub_tableName" placeholder="多个英文单词使用下划线拼接,长度不超过40个字符"
                         v-input-filter="{ regex: /[^0-9a-zA-Z_]/g, maxLength: 40, upOrLower: 'lower', otherMothed: (value) => value.replace(/^_+/, '').replace('__', '_') }"
-                        @blur="handleBlur" v-if="mixedTableDesign.dataStatus == '0'">
+                        @blur="handleBlur" v-if="mixedTableDesign.dataStatus == '0'" v-input-en-only>
                         <template #prepend>{{ mixedTableDesign.pre_tableName }}</template>
                     </el-input>
                     <span v-else>{{ mixedTableDesign.tableName }}</span>
@@ -779,7 +779,7 @@ const VIT_notExist = () => {
                                     regex: /[^0-9a-zA-Z_]/g,
                                     maxLength: 40, upOrLower: 'lower',
                                     otherMothed: (value) => value.replace(/^[_0-9]+/, '').replace('__', '_')
-                                }">
+                                }" v-input-en-only>
                                 </el-input>
                             </el-form-item>
                             <span v-else>{{ row.columnName }}</span>

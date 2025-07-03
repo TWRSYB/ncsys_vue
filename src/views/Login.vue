@@ -56,7 +56,7 @@ const login = () => {
                     <h1>登录</h1>
                 </el-form-item>
                 <el-form-item prop="loginCode">
-                    <el-input v-model="formData_login.loginCode" prefix-icon="User" placeholder="请输入账号"></el-input>
+                    <el-input v-model="formData_login.loginCode" prefix-icon="User" placeholder="请输入账号" v-input-en-only></el-input>
                 </el-form-item>
                 <el-form-item prop="loginPassword">
                     <el-input v-model="formData_login.loginPassword" prefix-icon="Lock" type="password"

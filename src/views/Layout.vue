@@ -1,8 +1,5 @@
 <script setup>
 import avatar from '@/assets/default.png'
-import SVG_Database from '@/components/svg/SVG_Database.vue';
-import SVG_PersonInfo from '@/components/svg/SVG_PersonInfo.vue';
-import SVG_User from '@/components/svg/SVG_User.vue';
 import { useTokenStore } from '@/stores/token';
 import { useUserInfoStore } from '@/stores/userInfo';
 
@@ -71,8 +68,9 @@ onMounted(() => {
                 </div>
             </div>
 
-            <el-menu :default-active="router.currentRoute.value.path" class="el-menu-vertical-demo" :collapse="isCollapse" router>
-                
+            <el-menu :default-active="router.currentRoute.value.path" class="el-menu-vertical-demo"
+                :collapse="isCollapse" router>
+
 
                 <el-sub-menu index="1">
                     <template #title>
@@ -89,9 +87,9 @@ onMounted(() => {
                     </el-menu-item>
                     <el-menu-item index="/sys/DbDesign">
                         <el-icon>
-                            <SVG_Database />
+                            <SVG_DataDesign />
                         </el-icon>
-                        <span>数据库设计</span>
+                        <span>数据库表设计</span>
                     </el-menu-item>
                     <!-- <el-menu-item-group title="功能分组1">
                         <template #title><span>系统设计</span></template>
@@ -153,7 +151,7 @@ onMounted(() => {
                 </el-sub-menu>
                 <el-menu-item index="/Worker/WorkerAttendance">
                     <el-icon>
-                        <SVG_WorkerManage />
+                        <SVG_Attendance />
                     </el-icon>
                     <template #title>工人出工</template>
                 </el-menu-item>
@@ -163,12 +161,27 @@ onMounted(() => {
                     </el-icon>
                     <template #title>耕种</template>
                 </el-menu-item>
-                <el-menu-item index="/Person/PersonInfo">
-                    <el-icon>
-                        <SVG_PersonInfo />
-                    </el-icon>
-                    <template #title>人员信息维护</template>
-                </el-menu-item>
+                <el-sub-menu index="6">
+                    <template #title>
+                        <el-icon>
+                            <SVG_MainData />
+                        </el-icon>
+                        <span>信息维护</span>
+                    </template>
+                    <el-menu-item index="/Person/PersonInfo">
+                        <el-icon>
+                            <SVG_PersonInfo />
+                        </el-icon>
+                        <template #title>人员信息</template>
+                    </el-menu-item>
+                    <el-menu-item index="/Person/WorkerInfo">
+                        <el-icon>
+                            <SVG_WorkerManage />
+                        </el-icon>
+                        <template #title>工人信息</template>
+                    </el-menu-item>
+                </el-sub-menu>
+
             </el-menu>
         </div>
 
@@ -177,7 +190,8 @@ onMounted(() => {
         <el-container>
             <!-- 头部区域 -->
             <el-header>
-                <div>{{OPT_roleCode[userInfoStore.info.roleCode]}}：<strong>{{ userInfoStore.info.userName }}</strong></div>
+                <div>{{ OPT_roleCode[userInfoStore.info.roleCode] }}：<strong>{{ userInfoStore.info.userName }}</strong>
+                </div>
                 <el-dropdown placement="bottom-end">
                     <span class="el-dropdown__box">
                         <el-avatar :src="avatar" />
@@ -187,7 +201,8 @@ onMounted(() => {
                     </span>
                     <template #dropdown>
                         <el-dropdown-menu>
-                            <el-dropdown-item command="userInfo" icon="User" @click="router.push('/User/UserInfo')">基本资料</el-dropdown-item>
+                            <el-dropdown-item command="userInfo" icon="User"
+                                @click="router.push('/User/UserInfo')">基本资料</el-dropdown-item>
                             <!-- <el-dropdown-item command="avatar" icon="Crop">更换头像</el-dropdown-item> -->
                             <el-dropdown-item command="changePassword" icon="Lock">修改密码</el-dropdown-item>
                             <el-dropdown-item command="logout" icon="SwitchButton"
@@ -201,7 +216,8 @@ onMounted(() => {
                 <router-view></router-view>
             </el-main>
             <!-- 底部区域 -->
-            <el-footer><span style="font-family: 'Font_xinshu';font-size: 20px;">祁县东城</span>&nbsp;&nbsp;©2025 Created by 黑牛程序员</el-footer>
+            <el-footer><span style="font-family: 'Font_xinshu';font-size: 20px;">祁县东城</span>&nbsp;&nbsp;©2025 Created by
+                黑牛程序员</el-footer>
         </el-container>
     </el-container>
 </template>

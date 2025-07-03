@@ -1,6 +1,6 @@
 <script setup>
-import { useUserInfoStore } from '@/stores/userInfo';
 
+import { useUserInfoStore } from '@/stores/userInfo';
 const userInfoStore = useUserInfoStore()
 
 
