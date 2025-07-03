@@ -14,6 +14,7 @@ import { createPinia } from 'pinia' // 引入 Pinia
 import { createPersistedState } from 'pinia-persistedstate-plugin' // 持久化插件
 import highlightDirective from '@/directives/highlight';
 import inputFilterDirective from './directives/input-filter'
+import inputEnOnlyDirective from './directives/input-en-only'
 
 
 
@@ -47,6 +48,7 @@ app.config.globalProperties.$Com = comUtils // 挂载 ComUtils 到全局属性
 
 
 // 1. 定义全局指令
+app.directive('input-en-only', inputEnOnlyDirective); // 注册input仅英文指令
 app.directive('input-filter', inputFilterDirective); // 注册input过滤指令
 app.directive('highlight', highlightDirective); // 注册高亮指令
 app.mount('#app')

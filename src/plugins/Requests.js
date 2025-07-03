@@ -1,4 +1,3 @@
-// src/utils/request.js
 import axios from 'axios'
 import { useTokenStore } from '@/stores/token'
 import { useUserInfoStore } from '@/stores/userInfo'

@@ -5,7 +5,17 @@ import SVG_PersonInfo from '@/components/svg/SVG_PersonInfo.vue';
 import SVG_User from '@/components/svg/SVG_User.vue';
 import { useTokenStore } from '@/stores/token';
 import { useUserInfoStore } from '@/stores/userInfo';
-import { onMounted } from 'vue';
+
+const OPT_roleCode = ref({}) // 角色选项
+const INIT_getOPT = () => {
+    // 获取选项
+    $Requests.get('/tableDesignColumn/getOption', { params: { tableName: 'm_user', columnName: 'role_code' } })
+        .then((response) => {
+            if (response.code === 200) {
+                OPT_roleCode.value = response.data;
+            }
+        })
+}
 
 const router = useRouter();
 const userInfoStore = useUserInfoStore()
@@ -39,7 +49,8 @@ const ASK_getUserInfo = async () => {
 onMounted(() => {
     // 页面加载时获取用户信息
     ASK_getUserInfo();
-    
+    // 页面加载时获取选项
+    INIT_getOPT();
 });
 
 
@@ -74,7 +85,7 @@ onMounted(() => {
                         <el-icon>
                             <SVG_User />
                         </el-icon>
-                        <span>用户管理</span>
+                        <span>用户列表</span>
                     </el-menu-item>
                     <el-menu-item index="/sys/DbDesign">
                         <el-icon>
@@ -166,7 +177,7 @@ onMounted(() => {
         <el-container>
             <!-- 头部区域 -->
             <el-header>
-                <div>{{userInfoStore.info.roleCode}}：<strong>{{ userInfoStore.info.userName }}</strong></div>
+                <div>{{OPT_roleCode[userInfoStore.info.roleCode]}}：<strong>{{ userInfoStore.info.userName }}</strong></div>
                 <el-dropdown placement="bottom-end">
                     <span class="el-dropdown__box">
                         <el-avatar :src="avatar" />

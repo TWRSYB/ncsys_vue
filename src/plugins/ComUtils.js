@@ -98,7 +98,15 @@ class ComUtils {
     TD_filter(tableDesign, disabledFields = ['createUser', 'createTime', 'updateUser', 'updateTime']) {
         return tableDesign.filter(field => !disabledFields.includes(field.columnName))
     }
-    
+
+    /**
+     * @description 下划线转驼峰
+     * @param {string} str 下划线格式的字符串
+     */
+    toCamelCase(str) {
+        return str.replace(/_([a-z])/g, (match, letter) => letter.toUpperCase())
+    }
+
 }
 
 // 创建实例（根据环境配置）

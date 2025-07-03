@@ -1,36 +1,144 @@
 <script setup>
+import { useUserInfoStore } from '@/stores/userInfo';
+
+const userInfoStore = useUserInfoStore()
 
 
+
+const TDS_User = ref([])
+const INIT_getTableDesign = () => {
+    // 获取表设计
+    $Requests.get('/tableDesign/getTableDesign', { params: { tableName: 'm_user' } })
+        .then((response) => {
+            if (response.code === 200) {
+                TDS_User.value = response.data;
+            }
+        })
+
+}
+
+onMounted(() => {
+    // 页面加载时获取表设计
+    INIT_getTableDesign();
+    // 获取用户列表
+    ACT_getUserList()
+})
+
+const OPT_roleCode = computed(() => {
+    try {
+        return TDS_User.value.filter(item => item.columnName === 'roleCode')[0].lvs
+    } catch (error) {
+        return {}
+    }
+});
+
+// 过滤表设计
+const FLDTDS_User = computed(() => {
+    if (userInfoStore.info.roleCode == 'sysAdmin') {
+        // 如果不是管理员,则过滤掉敏感字段
+        return TDS_User.value.filter(field => !['loginPassword', 'createUser', 'createTime', 'updateUser', 'updateTime'].includes(field.columnName))
+    }
+    if (userInfoStore.info.roleCode == 'manager') {
+        // 如果是普通用户,则过滤掉敏感字段
+        return TDS_User.value.filter(field => !['userId', 'loginPassword', 'phoneNum', 'createUser', 'createTime', 'updateUser', 'updateTime'].includes(field.columnName))
+    }
+    return []
+})
 
 
 //文章列表数据模型
-const userList = ref([])
+const TD_userList = ref([])
 
 
-//回显文章分类
-import { getUserListService } from '@/api/user.js'
-const getUserList = async () => {
-    let result = await getUserListService();
 
-    userList.value = result.data;
+const ACT_getUserList = () => {
+
+    $Requests.get('/sys/getUserList')
+        .then(result => {
+            if (result.code === 200) {
+                // 成功获取用户列表
+                TD_userList.value = result.data;
+            }
+        })
+
 }
 
 
-
-
-getUserList()
-
 //控制抽屉是否显示
-const visibleDrawer = ref(false)
+const SHOW_addUser = ref(false)
+const FORM_user = ref(null)
+const ACT_SHOW_addUser = () => {
+
+    // 显示抽屉
+    SHOW_addUser.value = true;
+    nextTick(() => {
+        // 重置表单数据
+        FORM_user.value.resetFields();
+    })
+}
 //添加表单数据模型
-const articleModel = ref({
-    title: '',
-    categoryId: '',
-    coverImg: '',
-    content: '',
-    state: ''
+const FD_user = ref({
+    loginCode: '',
+    loginPassword: '',
+    userName: '',
+    phoneNum: '',
+    roleCode: ''
 })
 
+
+//定义表单校验规则
+const rules = {
+    loginCode: [
+        { required: true, message: '请输入登录码, 8-10位数字字母组成', trigger: 'blur' },
+        { min: 8, max: 10, message: '长度为8~10位', trigger: 'change' },
+        // 必需同时包含数字和字母
+        { pattern: /^(?=.*[0-9])(?=.*[a-zA-Z])[0-9a-zA-Z]+$/, message: '登录码必须包含数字和字母', trigger: 'blur' }
+    ],
+    loginPassword: [
+        { required: true, message: '请输入初始密码, 10~16位数字字母和指定符号', trigger: 'blur' },
+        { min: 10, max: 16, message: '长度为10~16位', trigger: 'change' },
+        // 必需同时包含数字,小写字母,大写字母和特殊符号
+        { pattern: /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*_-])[0-9a-zA-Z!@#$%^&*_-]+$/, message: '初始密码必须包含数字,小写字母,大写字母和特殊符号', trigger: 'blur' }
+    ],
+    userName: [
+        { required: true, message: '请输入用户名', trigger: 'change' },
+        { min: 2, max: 10, message: '长度为2~10位', trigger: 'change' },
+        // 用户名不能包含空格
+        { pattern: /^[^\s]*$/, message: '用户名不能包含空格', trigger: 'change' }
+    ],
+    phoneNum: [
+        { required: true, message: '请输入手机号', trigger: 'change' },
+        // 手机号格式校验
+        { pattern: /^1[3-9]\d{9}$/, message: '手机号格式不正确', trigger: 'blur' }
+    ],
+    roleCode: [
+        { required: true, message: '请选择角色', trigger: 'change' }
+    ]
+}
+
+
+const SBM_addUser = () => {
+    // 提交新增用户前先校验表单
+    FORM_user.value.validate((valid, fields) => {
+        if (!valid) {
+            // 表单校验不通过
+            ElMessage.warning('请检查输入项');
+            return false;
+        }
+        // 提交新增用户
+        $Requests.post('/sys/addUser', FD_user.value, { showSuccessMsg: true })
+            .then(result => {
+                if (result.code === 200) {
+                    // 成功新增用户
+                    SHOW_addUser.value = false;
+                    ACT_getUserList(); // 刷新用户列表
+                }
+            })
+    });
+
+}
+
+const showPassword = ref(false)
 
 
 
@@ -41,39 +149,24 @@ const articleModel = ref({
     <el-card class="page-container">
         <template #header>
             <div class="header">
-                <span>用户管理</span>
+                <span>用户列表</span>
                 <div class="extra">
-                    <el-button type="primary" @click="getUserList">刷新</el-button>
-                    <el-button type="primary" @click="visibleDrawer = true">新增用户</el-button>
+                    <el-button type="primary" @click="ACT_getUserList">刷新</el-button>
+                    <el-button type="primary" @click="ACT_SHOW_addUser" v-if="userInfoStore.info.roleCode=='sysAdmin'">新增用户</el-button>
                 </div>
             </div>
+            
         </template>
 
-        <!-- * 用户ID  userId;
-     * 登录码  loginCode;  
-     * 登录密码  loginPassword;  
-     * 用户名  userName;  
-     * 手机号  phoneNum;  
-     * 角色:sysAdmin-系统管理员,manager-管理员,operator-操作员  roleCode;  
-     * 数据状态:0-未生效,1-生效,2-禁用,9-废弃  dataStatus;  
-     * 创建用户  createUser;  
-     * 创建时间  createTime;  
-     * 最后更新用户  updateUser;  
-     * 最后更新时间  updateTime; -->
-        <!-- 文章列表 -->
-        <el-table :data="userList" style="width: 100%">
-            <el-table-column label="用户ID" prop="userId"></el-table-column>
-            <el-table-column label="登录码" prop="loginCode"></el-table-column>
-            <el-table-column label="登录密码" prop="loginPassword"> </el-table-column>
-            <el-table-column label="用户名" prop="userName"></el-table-column>
-            <el-table-column label="手机号" prop="phoneNum"></el-table-column>
-            <el-table-column label="角色" prop="roleCode"></el-table-column>
-            <el-table-column label="数据状态" prop="dataStatus"></el-table-column>
-            <el-table-column label="创建用户" prop="createUser"></el-table-column>
-            <el-table-column label="创建时间" prop="createTime"></el-table-column>
-            <el-table-column label="最后更新用户" prop="updateUser"></el-table-column>
-            <el-table-column label="最后更新时间" prop="updateTime"></el-table-column>
-            <el-table-column label="操作" width="100">
+        <!-- 用户列表 -->
+        <el-table :data="TD_userList" style="width: 100%">
+            <el-table-column v-for="field in FLDTDS_User" :key="field.columnName" :label="field.columnComment"
+                :prop="field.columnName">
+                <template #default="{ row }" v-if="field.type == 'lv'">
+                    {{ field.lvs[row[field.columnName]] }}
+                </template>
+            </el-table-column>
+            <el-table-column label="操作" width="100" v-if="userInfoStore.info.roleCode=='sysAdmin'">
                 <template #default="{ row }">
                     <el-button icon="Edit" circle plain type="primary"></el-button>
                     <el-button icon="Delete" circle plain type="danger"></el-button>
@@ -83,53 +176,55 @@ const articleModel = ref({
                 <el-empty description="没有数据" />
             </template>
         </el-table>
+        {{ TDS_User }}
+        <br />
+        {{ OPT_roleCode }}
         <!-- 分页条 -->
         <!-- <el-pagination v-model:current-page="pageNum" v-model:page-size="pageSize" :page-sizes="[3, 5, 10, 15]"
             layout="jumper, total, sizes, prev, pager, next" background :total="total" @size-change="onSizeChange"
             @current-change="onCurrentChange" style="margin-top: 20px; justify-content: flex-end" /> -->
 
-        <!-- 抽屉 -->
-        <el-drawer v-model="visibleDrawer" title="添加文章" direction="rtl" size="50%">
-            <!-- 添加文章表单 -->
-            <el-form :model="articleModel" label-width="100px">
-                <el-form-item label="文章标题">
-                    <el-input v-model="articleModel.title" placeholder="请输入标题"></el-input>
+        <!-- 新增用户 -->
+        <el-drawer v-model="SHOW_addUser" title="新增用户" direction="rtl" size="50%">
+            <!-- 新增用户表单 -->
+            <el-form ref="FORM_user" :model="FD_user" label-width="100px" :rules="rules">
+                <el-form-item label="登录码" prop="loginCode">
+                    <el-input v-model="FD_user.loginCode" placeholder="登录码"
+                        v-input-filter="{ regex: /[^0-9a-zA-Z]/g, maxLength: 10 }" v-input-en-only></el-input>
                 </el-form-item>
-                <el-form-item label="文章分类">
-                    <el-select placeholder="请选择" v-model="articleModel.categoryId">
-                        <el-option v-for="c in userList" :key="c.id" :label="c.categoryName" :value="c.id">
-                        </el-option>
-                    </el-select>
+                <el-form-item label="初始密码" prop="loginPassword">
+                    <el-input v-model="FD_user.loginPassword" placeholder="初始密码"
+                        v-input-filter="{ regex: /[^0-9a-zA-Z!@#$%^&*_-]/g, maxLength: 16 }"
+                        :type="showPassword ? 'text' : 'password'">
+                        <template #suffix>
+                            <el-icon @click="showPassword = !showPassword">
+                                <View v-if="showPassword" />
+                                <Hide v-else />
+                            </el-icon>
+                        </template>
+                    </el-input>
                 </el-form-item>
-                <el-form-item label="文章封面">
-
-                    <!-- 
-                        auto-upload:设置是否自动上传
-                        action:设置服务器接口路径
-                        name:设置上传的文件字段名
-                        headers:设置上传的请求头
-                        on-success:设置上传成功的回调函数
-                     -->
-
-                    <el-upload class="avatar-uploader" :auto-upload="true" :show-file-list="false" action="/api/upload"
-                        name="file" :headers="{ 'Authorization': tokenStore.token }" :on-success="uploadSuccess">
-                        <img v-if="articleModel.coverImg" :src="articleModel.coverImg" class="avatar" />
-                        <el-icon v-else class="avatar-uploader-icon">
-                            <Plus />
-                        </el-icon>
-                    </el-upload>
+                <el-form-item label="用户名" prop="userName">
+                    <el-input v-model="FD_user.userName" placeholder="用户名"></el-input>
                 </el-form-item>
-                <!-- <el-form-item label="文章内容">
-                    <div class="editor">
-                        <quill-editor theme="snow" v-model:content="articleModel.content" contentType="html">
-                        </quill-editor>
-                    </div>
-                </el-form-item> -->
-                <el-form-item>
-                    <el-button type="primary" @click="addArticle('已发布')">发布</el-button>
-                    <el-button type="info" @click="addArticle('草稿')">草稿</el-button>
+                <el-form-item label="手机号" prop="phoneNum">
+                    <el-input v-model="FD_user.phoneNum" placeholder="手机号"></el-input>
+                </el-form-item>
+                <el-form-item label="角色" prop="roleCode">
+                    <el-radio-group placeholder="请选择" v-model="FD_user.roleCode">
+                        <el-radio-button v-for="(value, key, index) in OPT_roleCode" :value="key" :key="key">
+                            {{ value }}
+                        </el-radio-button>
+                    </el-radio-group>
                 </el-form-item>
             </el-form>
+
+            <template #footer>
+                <div style="flex: auto">
+                    <el-button type="primary" @click="SBM_addUser('已发布')">新增</el-button>
+                </div>
+            </template>
+            {{ FD_user }}
         </el-drawer>
     </el-card>
 </template>

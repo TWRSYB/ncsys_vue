@@ -1,24 +1,46 @@
 <script setup>
 
-
+const TDS_TableDesign = ref([])
+const TDS_TableDesignColumn = ref([])
+const TDS_TableDesignSql = ref([])
 const INIT_getTableDesign = () => {
     // 获取表设计
     $Requests.get('/tableDesign/getTableDesign', { params: { tableName: 's_table_design' } })
         .then((response) => {
             if (response.code === 200) {
-                TD_TableDesign.value = response.data;
+                TDS_TableDesign.value = response.data;
             }
         })
     $Requests.get('/tableDesign/getTableDesign', { params: { tableName: 's_table_design_column' } })
         .then((response) => {
             if (response.code === 200) {
-                TD_TableDesignColumn.value = response.data;
+                TDS_TableDesignColumn.value = response.data;
             }
         })
     $Requests.get('/tableDesign/getTableDesign', { params: { tableName: 's_table_design_sql' } })
         .then((response) => {
             if (response.code === 200) {
-                TD_TableDesignSql.value = response.data;
+                TDS_TableDesignSql.value = response.data;
+            }
+        })
+}
+
+const OPT_tableType = ref({})    // 表类型
+const OPT_fieldType = ref([])
+const OPT_YN = { "Y": "是", "N": "否" }
+
+const INIT_getOPT = () => {
+    // 获取选项
+    $Requests.get('/tableDesignColumn/getOption', { params: { tableName: 's_table_design', columnName: 'table_type' } })
+        .then((response) => {
+            if (response.code === 200) {
+                OPT_tableType.value = response.data;
+            }
+        })
+    $Requests.get('/tableDesignColumn/getOption', { params: { tableName: 's_table_design_column', columnName: 'field_type' } })
+        .then((response) => {
+            if (response.code === 200) {
+                OPT_fieldType.value = response.data;
             }
         })
 }
@@ -26,13 +48,15 @@ const INIT_getTableDesign = () => {
 onMounted(() => {
     // 页面加载时获取表设计
     INIT_getTableDesign();
+    // 获取选项
+    INIT_getOPT();
     // 获取表设计列表
     ACT_getTableDesignList();
 })
 
 // 过滤表设计
-const Fielded_TD_TableDesign = computed(() => {
-    return TD_TableDesign.value.filter(field => !['createUser', 'createTime', 'updateUser', 'updateTime'].includes(field.columnName))
+const Fielded_TDS_TableDesign = computed(() => {
+    return TDS_TableDesign.value.filter(field => !['createUser', 'createTime', 'updateUser', 'updateTime'].includes(field.columnName))
 })
 
 
@@ -52,9 +76,7 @@ const ACT_getTableDesignList = () => {
 
 const list_tableDesign = ref([])
 
-const TD_TableDesign = ref([])
-const TD_TableDesignColumn = ref([])
-const TD_TableDesignSql = ref([])
+
 
 //控制抽屉是否显示
 const visibleDrawer = ref(false)
@@ -301,17 +323,13 @@ const rules = {
     ],
     sub_tableName: [
         { required: true, message: '请输入表名', trigger: 'change' },
-        { min: 5, max: 40, message: '长度为5~40位单词下划线拼接', trigger: 'change' }
+        { min: 3, max: 40, message: '长度为3~40位单词下划线拼接', trigger: 'change' }
     ],
     tableComment: [
         { required: true, message: '请输入表注释', trigger: 'change' }
     ]
 }
 
-
-const option_tableType = { "s": "系统表(system)", "t": "交易表(trade)", "l": "日志表(log)", "m": "主数据表(main)", "ts": "交易子表(tradesub)" }
-const option_fieldType = ["varchar", "char", "int", "timestamp", "TEXT", "BLOB", "JSON"]
-const option_YN = { "Y": "是", "N": "否" }
 
 
 
@@ -676,7 +694,7 @@ const VIT_notExist = () => {
         <!-- show-overflow-tooltip -->
         <el-table :data="list_tableDesign" border style="width: 100%">
             <el-table-column width="55px" label="序号" type="index"> </el-table-column>
-            <el-table-column v-for="field in Fielded_TD_TableDesign" :key="field.columnName"
+            <el-table-column v-for="field in Fielded_TDS_TableDesign" :key="field.columnName"
                 :label="field.columnComment" :prop="field.columnName">
                 <template #default="{ row }" v-if="field.type == 'lv'">
                     {{ field.lvs[row[field.columnName]] }}
@@ -700,24 +718,24 @@ const VIT_notExist = () => {
                 <el-empty description="没有数据" />
             </template>
         </el-table>
-        {{ TD_TableDesign }}
+        {{ TDS_TableDesign }}
 
         <!-- 抽屉 -->
         <el-drawer v-model="visibleDrawer" :title="title_Drawer" direction="rtl" size="90%">
             <!-- 新增表表单 -->
             <el-form ref="form_addTable" :model="mixedTableDesign" label-width="100px" :rules="rules"
-                :disabled="title_Drawer == '表设计详情'">
+                :disabled="title_Drawer == '表设计详情'" size="small">
                 <el-divider content-position="left" style="margin-top: 20px;">表信息</el-divider>
 
-                <el-form-item class="itemOne" label="表分类" prop="tableType">
+                <el-form-item class="itemOne" label="表分类" prop="tableType" >
                     <el-radio-group v-model="mixedTableDesign.tableType" v-if="mixedTableDesign.dataStatus == '0'">
-                        <el-radio-button v-for="(value, key, index) in option_tableType" :value="key" :key="key">
+                        <el-radio-button v-for="(value, key, index) in OPT_tableType" :value="key" :key="key">
                             {{ value }}
                         </el-radio-button>
                     </el-radio-group>
                     <span v-else>{{ mixedTableDesign.tableType }}</span>
                 </el-form-item>
-                <el-form-item label="表名" prop="sub_tableName">
+                <el-form-item label="表名" prop="sub_tableName" style="width: 700px">
                     <el-input v-model="mixedTableDesign.sub_tableName" placeholder="多个英文单词使用下划线拼接,长度不超过40个字符"
                         v-input-filter="{ regex: /[^0-9a-zA-Z_]/g, maxLength: 40, upOrLower: 'lower', otherMothed: (value) => value.replace(/^_+/, '').replace('__', '_') }"
                         @blur="handleBlur" v-if="mixedTableDesign.dataStatus == '0'">
@@ -725,7 +743,7 @@ const VIT_notExist = () => {
                     </el-input>
                     <span v-else>{{ mixedTableDesign.tableName }}</span>
                 </el-form-item>
-                <el-form-item label="表注释" prop="tableComment">
+                <el-form-item label="表注释" prop="tableComment" style="width: 700px">
                     <el-input v-model="mixedTableDesign.tableComment" placeholder="长度不超过40个字符"
                         v-input-filter="{ maxLength: 40, notAlloweList: [' '] }"
                         v-if="mixedTableDesign.dataStatus == '0'"></el-input>
@@ -767,6 +785,11 @@ const VIT_notExist = () => {
                             <span v-else>{{ row.columnName }}</span>
                         </template>
                     </el-table-column>
+                    <el-table-column label="驼峰列名" prop="columnName" align="center" v-if="title_Drawer == '表设计详情'">
+                        <template #default="{ row }">
+                            <span>{{ $Com.toCamelCase(row.columnName) }}</span>
+                        </template>
+                    </el-table-column>
                     <el-table-column label="列注释" prop="columnComment" align="center">
                         <template #default="{ row }">
                             <el-form-item v-if="mixedTableDesign.dataStatus == '0' || row.dataStatus != 1"
@@ -804,7 +827,7 @@ const VIT_notExist = () => {
                                 prop="fieldType" :rules="VIT_required(row.fieldType)">
                                 <el-select v-model="row.fieldType" placeholder="请选择字段类型"
                                     @change="(val) => fieldTypeChange(row, val)">
-                                    <el-option v-for="(key, index) in option_fieldType" :key="key" :label="key"
+                                    <el-option v-for="(key, index) in OPT_fieldType" :key="key" :label="key"
                                         :value="key" />
                                 </el-select>
                             </el-form-item>
@@ -902,7 +925,7 @@ const VIT_notExist = () => {
                 <el-divider content-position="left" style="margin-top: 70px;">唯一约束</el-divider>
 
                 <el-table :data="mixedTableDesign.list_uniqueKey" table-layout="auto">
-                    <el-table-column prop="uniqueKeyName" label="约束名称" align="center">
+                    <el-table-column prop="uniqueKeyName" label="约束名称" align="center" width="150px">
                     </el-table-column>
                     <el-table-column label="约束字段" align="center">
                         <template #default="{ row, $index }">
@@ -951,16 +974,6 @@ const VIT_notExist = () => {
                         v-if="mixedTableDesign.dataStatus == '1'">查看最新建表语句</el-button>
                 </div>
             </template>
-
-
-
-
-            <br><br><br>
-            {{ TD_TableDesignColumn }}
-            <br><br><br>
-            {{ TD_TableDesign }}
-            <br><br><br>
-            {{ mixedTableDesign }}
         </el-drawer>
     </el-card>
 
