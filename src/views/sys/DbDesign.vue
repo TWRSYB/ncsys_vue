@@ -82,10 +82,10 @@ const list_tableDesign = ref([])
 const visibleDrawer = ref(false)
 const title_Drawer = ref('')
 
-const mixedTableDesign = ref({})
+const FD_mixedTableDesign = ref({})
 
 const init_mixedTableDesign = () => {
-    mixedTableDesign.value = {
+    FD_mixedTableDesign.value = {
         tableType: '',
         tableName: '',
         pre_tableName: '',
@@ -110,9 +110,9 @@ const ACT_showTableDesign = (row) => {
         title_Drawer.value = '表设计详情'
         init_mixedTableDesign()
         nextTick(() => {
-            form_addTable.value.resetFields()
-            mixedTableDesign.value = response.data
-            mixedTableDesign.value.sub_tableName = response.data.tableName.substring(response.data.tableName.indexOf('_') + 1)
+            FORM_addTable.value.resetFields()
+            FD_mixedTableDesign.value = response.data
+            FD_mixedTableDesign.value.sub_tableName = response.data.tableName.substring(response.data.tableName.indexOf('_') + 1)
             // mixedTableDesign.value.pre_tableName = response.data.tableName.substring(0, response.data.tableName.indexOf('_'))
         })
     })
@@ -129,9 +129,9 @@ const ACT_editTableDesign = (tableName) => {
         title_Drawer.value = '修改表设计'
         init_mixedTableDesign()
         nextTick(() => {
-            form_addTable.value.resetFields()
-            mixedTableDesign.value = response.data
-            mixedTableDesign.value.sub_tableName = response.data.tableName.substring(response.data.tableName.indexOf('_') + 1)
+            FORM_addTable.value.resetFields()
+            FD_mixedTableDesign.value = response.data
+            FD_mixedTableDesign.value.sub_tableName = response.data.tableName.substring(response.data.tableName.indexOf('_') + 1)
         })
     }).catch(err => {
         console.log(err);
@@ -143,7 +143,7 @@ const ACT_addTable = () => {
     title_Drawer.value = '新增表'
     init_mixedTableDesign()
     nextTick(() => {
-        form_addTable.value.resetFields()
+        FORM_addTable.value.resetFields()
     })
 }
 
@@ -151,7 +151,7 @@ const ACT_addTable = () => {
 
 const dealWithMixedTableDesignBeforeSBM = () => {
     // 处理 mixedTableDesign 的数据, 确保提交前的数据格式正确
-    for (const tableDesignColumn of mixedTableDesign.value.list_tableDesignColumn) {
+    for (const tableDesignColumn of FD_mixedTableDesign.value.list_tableDesignColumn) {
         const fieldEnumArray = tableDesignColumn.fieldEnumArray
         if (fieldEnumArray && fieldEnumArray.length) {
             tableDesignColumn.fieldEnum = fieldEnumArray.join(',')
@@ -160,7 +160,7 @@ const dealWithMixedTableDesignBeforeSBM = () => {
         }
     }
 
-    for (const uniqueKey of mixedTableDesign.value.list_uniqueKey) {
+    for (const uniqueKey of FD_mixedTableDesign.value.list_uniqueKey) {
         uniqueKey.uniqueKeyColumn = uniqueKey.uniqueKeyColumnArray.join(',')
     }
 }
@@ -169,7 +169,7 @@ const dealWithMixedTableDesignBeforeSBM = () => {
  * 提交保存表设计
  */
 const SBM_saveTableDesign = () => {
-    form_addTable.value.validate((valid, fields) => {
+    FORM_addTable.value.validate((valid, fields) => {
         if (!valid) {
             ElMessage.warning('请检查输入项');
             return false
@@ -178,7 +178,7 @@ const SBM_saveTableDesign = () => {
         dealWithMixedTableDesignBeforeSBM()
 
         // 调用接口保存数据库设计
-        $Requests.post('/tableDesign/saveTableDesign', mixedTableDesign.value, { showSuccessMsg: true })
+        $Requests.post('/tableDesign/saveTableDesign', FD_mixedTableDesign.value, { showSuccessMsg: true })
             .then((response) => {
                 if (response.code === 200) {
                     // 保存成功, 刷新列表
@@ -194,7 +194,7 @@ const SBM_saveTableDesign = () => {
  * 提交建表
  */
 const SBM_createTableAndEntity = () => {
-    form_addTable.value.validate((valid, fields) => {
+    FORM_addTable.value.validate((valid, fields) => {
         if (!valid) {
             ElMessage.warning('请检查输入项');
             return false
@@ -212,7 +212,7 @@ const SBM_createTableAndEntity = () => {
             dealWithMixedTableDesignBeforeSBM()
 
             // 调用接口,完成建表
-            $Requests.post('/tableDesign/createTableAndEntity', mixedTableDesign.value, { showSuccessMsg: true })
+            $Requests.post('/tableDesign/createTableAndEntity', FD_mixedTableDesign.value, { showSuccessMsg: true })
                 .then((response) => {
                     if (response.code === 200) {
                         // 跳转首页
@@ -254,7 +254,7 @@ const SBM_deleteTableDesign = (row) => {
  * 提交新增列
  */
 const SBM_addColumn = (row, index) => {
-    form_addTable.value.validate((valid, fields) => {
+    FORM_addTable.value.validate((valid, fields) => {
         if (!valid) {
             ElMessage.warning('请检查输入项');
             return false
@@ -267,14 +267,14 @@ const SBM_addColumn = (row, index) => {
             row.fieldEnum = null
         }
 
-        row.tableId = mixedTableDesign.value.tableId
-        row.tableName = mixedTableDesign.value.tableName
+        row.tableId = FD_mixedTableDesign.value.tableId
+        row.tableName = FD_mixedTableDesign.value.tableName
 
         $Requests.post('/tableDesign/addColumn', row, { showSuccessMsg: true })
             .then((response) => {
                 if (response.code === 200) {
                     // 添加列成功, 刷新编辑页面
-                    mixedTableDesign.value.list_tableDesignColumn[index] = response.data
+                    FD_mixedTableDesign.value.list_tableDesignColumn[index] = response.data
                 }
             })
     })
@@ -285,7 +285,7 @@ const SBM_addColumn = (row, index) => {
  * 提交修改列
  */
 const SBM_changeColumn = (row, index) => {
-    form_addTable.value.validate((valid, fields) => {
+    FORM_addTable.value.validate((valid, fields) => {
         if (!valid) {
             ElMessage.warning('请检查输入项');
             return false
@@ -298,14 +298,14 @@ const SBM_changeColumn = (row, index) => {
             row.fieldEnum = null
         }
 
-        row.tableId = mixedTableDesign.value.tableId
-        row.tableName = mixedTableDesign.value.tableName
+        row.tableId = FD_mixedTableDesign.value.tableId
+        row.tableName = FD_mixedTableDesign.value.tableName
 
         $Requests.post('/tableDesign/changeColumn', row, { showSuccessMsg: true })
             .then((response) => {
                 if (response.code === 200) {
                     // 修改列成功, 刷新编辑页面
-                    mixedTableDesign.value.list_tableDesignColumn[index] = response.data
+                    FD_mixedTableDesign.value.list_tableDesignColumn[index] = response.data
                 }
             })
 
@@ -314,7 +314,7 @@ const SBM_changeColumn = (row, index) => {
 }
 
 
-const form_addTable = ref(null);
+const FORM_addTable = ref(null);
 
 //定义表单校验规则
 const rules = {
@@ -334,11 +334,11 @@ const rules = {
 
 
 // 监听 B 和 C 的变化，自动更新 A
-watch([() => mixedTableDesign.value.tableType, () => mixedTableDesign.value.sub_tableName], ([type, sub]) => {
+watch([() => FD_mixedTableDesign.value.tableType, () => FD_mixedTableDesign.value.sub_tableName], ([type, sub]) => {
 
     let pre_tableName = type ? type + '_' : ''
-    mixedTableDesign.value.pre_tableName = pre_tableName
-    mixedTableDesign.value.tableName = pre_tableName + sub
+    FD_mixedTableDesign.value.pre_tableName = pre_tableName
+    FD_mixedTableDesign.value.tableName = pre_tableName + sub
 }, { immediate: true })
 
 const handleBlur = (event) => {
@@ -352,7 +352,7 @@ const handleBlur = (event) => {
 
 //添加列
 const ACT_addColumn = () => {
-    mixedTableDesign.value.list_tableDesignColumn.push(
+    FD_mixedTableDesign.value.list_tableDesignColumn.push(
         {
             dataStatus: '0',
             fieldIndex: '',
@@ -394,19 +394,19 @@ const CHG_keyYn = (row, val) => {
 
 //删除字段
 const ACT_deleteColumn = (row, index) => {
-    mixedTableDesign.value.list_tableDesignColumn.splice(index, 1)
+    FD_mixedTableDesign.value.list_tableDesignColumn.splice(index, 1)
 }
 
 
 //修改字段
 const ACT_changeColumn = (row, index) => {
-    mixedTableDesign.value.tempColumn = $Com.deepClone(row);
+    FD_mixedTableDesign.value.tempColumn = $Com.deepClone(row);
     row.dataStatus = '3'
 }
 
 //取消修改/新增字段
 const ACT_cancelChangeColumn = (row, index) => {
-    mixedTableDesign.value.list_tableDesignColumn[index] = mixedTableDesign.value.tempColumn
+    FD_mixedTableDesign.value.list_tableDesignColumn[index] = FD_mixedTableDesign.value.tempColumn
 }
 
 //添加枚举
@@ -500,14 +500,14 @@ const confirm_Enum = (row, tag, index) => {
 
 //添加唯一约束
 const ACT_addUniqueKey = () => {
-    if (mixedTableDesign.value.list_tableDesignColumn.length == 0) {
+    if (FD_mixedTableDesign.value.list_tableDesignColumn.length == 0) {
         ElMessage.warning('请先添加字段');
         return;
     }
-    if (!mixedTableDesign.value.list_uniqueKey) {
-        mixedTableDesign.value.list_uniqueKey = [];
+    if (!FD_mixedTableDesign.value.list_uniqueKey) {
+        FD_mixedTableDesign.value.list_uniqueKey = [];
     }
-    mixedTableDesign.value.list_uniqueKey.push({
+    FD_mixedTableDesign.value.list_uniqueKey.push({
         dataStatus: '0',
         uniqueKeyName: '新建唯一约束',
         uniqueKeyColumnArray: [],
@@ -517,28 +517,28 @@ const ACT_addUniqueKey = () => {
 
 //删除唯一约束
 const ACT_deleteUniqueKey = (row, index) => {
-    mixedTableDesign.value.list_uniqueKey.splice(index, 1)
+    FD_mixedTableDesign.value.list_uniqueKey.splice(index, 1)
 }
 
 /**
  * 提交新增唯一约束
  */
 const SBM_addUniqueKey = (row, index) => {
-    form_addTable.value.validate((valid, fields) => {
+    FORM_addTable.value.validate((valid, fields) => {
         if (!valid) {
             ElMessage.warning('请检查输入项');
             return false
         }
 
 
-        const key = mixedTableDesign.value.list_tableDesignColumn.filter((item) => item.keyYn == 'Y').map((item) => item.columnName)
+        const key = FD_mixedTableDesign.value.list_tableDesignColumn.filter((item) => item.keyYn == 'Y').map((item) => item.columnName)
         if ($Com.arraysEqual(key, row.uniqueKeyColumnArray)) {
             ElMessage.warning('唯一约束不能与主键重复');
             return false
         }
 
 
-        const uniqueKeys = mixedTableDesign.value.list_uniqueKey.filter((item) => item.dataStatus == '1').map((item) => item.uniqueKeyColumnArray)
+        const uniqueKeys = FD_mixedTableDesign.value.list_uniqueKey.filter((item) => item.dataStatus == '1').map((item) => item.uniqueKeyColumnArray)
         for (const uniqueKey of uniqueKeys) {
             if ($Com.arraysEqual(uniqueKey, row.uniqueKeyColumnArray)) {
                 ElMessage.warning('唯一约束不能与已存在的唯一约束重复');
@@ -547,15 +547,15 @@ const SBM_addUniqueKey = (row, index) => {
         }
 
         row.uniqueKeyColumn = row.uniqueKeyColumnArray.join(',')
-        row.tableId = mixedTableDesign.value.tableId
-        row.tableName = mixedTableDesign.value.tableName
+        row.tableId = FD_mixedTableDesign.value.tableId
+        row.tableName = FD_mixedTableDesign.value.tableName
 
         // 调用接口, 完成添加唯一约束
         $Requests.post('/tableDesign/addUniqueKey', row, { showSuccessMsg: true })
             .then((response) => {
                 if (response.code === 200) {
                     // 添加列成功, 刷新编辑页面
-                    mixedTableDesign.value.list_uniqueKey[index] = response.data
+                    FD_mixedTableDesign.value.list_uniqueKey[index] = response.data
                 }
             })
 
@@ -578,13 +578,13 @@ const SBM_deleteUniqueKey = (row, index) => {
         }
     ).then(() => {
 
-        row.tableName = mixedTableDesign.value.tableName
+        row.tableName = FD_mixedTableDesign.value.tableName
 
         // 调用接口,完成登录
         $Requests.post('/tableDesign/deleteUniqueKey', row, { showSuccessMsg: true })
             .then((response) => {
                 if (response.code === 200) {
-                    mixedTableDesign.value.list_uniqueKey.splice(index, 1);
+                    FD_mixedTableDesign.value.list_uniqueKey.splice(index, 1);
                 }
             })
     })
@@ -595,11 +595,11 @@ const DLG_lastSql = ref(false);
 
 // 查看最新建表SQL
 const ACT_showLastSql = () => {
-    $Requests.get('/tableDesignSql/getLastTableDesignSql', { params: { tableId: mixedTableDesign.value.tableId } })
+    $Requests.get('/tableDesignSql/getLastTableDesignSql', { params: { tableId: FD_mixedTableDesign.value.tableId } })
         .then((response) => {
             if (response.code === 200) {
-                mixedTableDesign.value.last_tableDesignSql = response.data;
-                if (!mixedTableDesign.value.last_tableDesignSql || !mixedTableDesign.value.last_tableDesignSql.lastCreateSql) {
+                FD_mixedTableDesign.value.last_tableDesignSql = response.data;
+                if (!FD_mixedTableDesign.value.last_tableDesignSql || !FD_mixedTableDesign.value.last_tableDesignSql.lastCreateSql) {
                     ElMessage.warning('没有上次生成的SQL');
                     return;
                 }
@@ -615,7 +615,7 @@ const ACT_showLastSql = () => {
 const handleCopy = async () => {
     // 现代浏览器方案（优先使用）
     if (navigator.clipboard) {
-        await navigator.clipboard.writeText(mixedTableDesign.value.last_tableDesignSql.lastCreateSql);
+        await navigator.clipboard.writeText(FD_mixedTableDesign.value.last_tableDesignSql.lastCreateSql);
         ElMessage.success('SQL已复制到剪贴板');
         DLG_lastSql.value = false
     }
@@ -723,31 +723,31 @@ const VIT_notExist = () => {
         <!-- 抽屉 -->
         <el-drawer v-model="visibleDrawer" :title="title_Drawer" direction="rtl" size="90%">
             <!-- 新增表表单 -->
-            <el-form ref="form_addTable" :model="mixedTableDesign" label-width="100px" :rules="rules"
+            <el-form ref="FORM_addTable" :model="FD_mixedTableDesign" label-width="100px" :rules="rules"
                 :disabled="title_Drawer == '表设计详情'" size="small">
                 <el-divider content-position="left" style="margin-top: 20px;">表信息</el-divider>
 
                 <el-form-item class="itemOne" label="表分类" prop="tableType" >
-                    <el-radio-group v-model="mixedTableDesign.tableType" v-if="mixedTableDesign.dataStatus == '0'">
+                    <el-radio-group v-model="FD_mixedTableDesign.tableType" v-if="FD_mixedTableDesign.dataStatus == '0'">
                         <el-radio-button v-for="(value, key, index) in OPT_tableType" :value="key" :key="key">
                             {{ value }}
                         </el-radio-button>
                     </el-radio-group>
-                    <span v-else>{{ mixedTableDesign.tableType }}</span>
+                    <span v-else>{{ FD_mixedTableDesign.tableType }}</span>
                 </el-form-item>
                 <el-form-item label="表名" prop="sub_tableName" style="width: 700px">
-                    <el-input v-model="mixedTableDesign.sub_tableName" placeholder="多个英文单词使用下划线拼接,长度不超过40个字符"
+                    <el-input v-model="FD_mixedTableDesign.sub_tableName" placeholder="多个英文单词使用下划线拼接,长度不超过40个字符"
                         v-input-filter="{ regex: /[^0-9a-zA-Z_]/g, maxLength: 40, upOrLower: 'lower', otherMothed: (value) => value.replace(/^_+/, '').replace('__', '_') }"
-                        @blur="handleBlur" v-if="mixedTableDesign.dataStatus == '0'" v-input-en-only>
-                        <template #prepend>{{ mixedTableDesign.pre_tableName }}</template>
+                        @blur="handleBlur" v-if="FD_mixedTableDesign.dataStatus == '0'" v-input-en-only>
+                        <template #prepend>{{ FD_mixedTableDesign.pre_tableName }}</template>
                     </el-input>
-                    <span v-else>{{ mixedTableDesign.tableName }}</span>
+                    <span v-else>{{ FD_mixedTableDesign.tableName }}</span>
                 </el-form-item>
                 <el-form-item label="表注释" prop="tableComment" style="width: 700px">
-                    <el-input v-model="mixedTableDesign.tableComment" placeholder="长度不超过40个字符"
+                    <el-input v-model="FD_mixedTableDesign.tableComment" placeholder="长度不超过40个字符"
                         v-input-filter="{ maxLength: 40, notAlloweList: [' '] }"
-                        v-if="mixedTableDesign.dataStatus == '0'"></el-input>
-                    <span v-else>{{ mixedTableDesign.tableComment }}</span>
+                        v-if="FD_mixedTableDesign.dataStatus == '0'"></el-input>
+                    <span v-else>{{ FD_mixedTableDesign.tableComment }}</span>
                 </el-form-item>
 
 
@@ -755,7 +755,7 @@ const VIT_notExist = () => {
                 <el-divider content-position="left" style="margin-top: 70px;">字段信息</el-divider>
 
 
-                <el-table :data="mixedTableDesign.list_tableDesignColumn" border table-layout="auto">
+                <el-table :data="FD_mixedTableDesign.list_tableDesignColumn" border table-layout="auto">
                     <el-table-column label="序号" prop="fieldIndex" width="55" align="center">
                         <template #default="{ row, $index }">
                             {{ row.ordinalPosition || row.fieldIndex }}
@@ -763,7 +763,7 @@ const VIT_notExist = () => {
                     </el-table-column>
                     <el-table-column prop="dataStatus" label="状态" width="70" align="center">
                         <template #default="{ row }">
-                            <span v-if="mixedTableDesign.dataStatus == '0'">待建表</span>
+                            <span v-if="FD_mixedTableDesign.dataStatus == '0'">待建表</span>
                             <span v-else-if="row.dataStatus == '0'">添加中</span>
                             <span v-else-if="row.dataStatus == '1'">正常</span>
                             <!-- <span v-else-if="row.dataStatus == '2'">禁用</span> -->
@@ -773,7 +773,7 @@ const VIT_notExist = () => {
                     </el-table-column>
                     <el-table-column label="列名" prop="columnName" align="center">
                         <template #default="{ row }">
-                            <el-form-item v-if="mixedTableDesign.dataStatus == '0' || row.dataStatus != 1"
+                            <el-form-item v-if="FD_mixedTableDesign.dataStatus == '0' || row.dataStatus != 1"
                                 prop="columnName" :rules="VIT_required(row.columnName)">
                                 <el-input v-model="row.columnName" @blur="handleBlur" v-input-filter="{
                                     regex: /[^0-9a-zA-Z_]/g,
@@ -792,7 +792,7 @@ const VIT_notExist = () => {
                     </el-table-column>
                     <el-table-column label="列注释" prop="columnComment" align="center">
                         <template #default="{ row }">
-                            <el-form-item v-if="mixedTableDesign.dataStatus == '0' || row.dataStatus != 1"
+                            <el-form-item v-if="FD_mixedTableDesign.dataStatus == '0' || row.dataStatus != 1"
                                 prop="columnComment" :rules="VIT_required(row.columnComment)">
                                 <el-input v-model="row.columnComment"
                                     v-input-filter="{ maxLength: 40, notAlloweList: [' ', ':', ','] }">
@@ -803,7 +803,7 @@ const VIT_notExist = () => {
                     </el-table-column>
                     <el-table-column label="是否主键" prop="keyYn" width="90" align="center">
                         <template #default="{ row }">
-                            <el-form-item v-if="mixedTableDesign.dataStatus == '0' || row.dataStatus != 1" prop="keyYn"
+                            <el-form-item v-if="FD_mixedTableDesign.dataStatus == '0' || row.dataStatus != 1" prop="keyYn"
                                 :rules="VIT_required(row.keyYn)">
                                 <el-checkbox v-model="row.keyYn" size="large" true-value="Y" false-value="N"
                                     @change="(val) => CHG_keyYn(row, val)" />
@@ -813,7 +813,7 @@ const VIT_notExist = () => {
                     </el-table-column>
                     <el-table-column label="是否可空" prop="nullAbleYn" width="90" align="center">
                         <template #default="{ row }">
-                            <el-form-item v-if="mixedTableDesign.dataStatus == '0' || row.dataStatus != 1"
+                            <el-form-item v-if="FD_mixedTableDesign.dataStatus == '0' || row.dataStatus != 1"
                                 prop="nullAbleYn" :rules="VIT_required(row.nullAbleYn)">
                                 <el-switch v-model="row.nullAbleYn" inline-prompt active-text="是" active-value="Y"
                                     inactive-text="否" inactive-value="N" :disabled="row.keyYn == 'Y'" />
@@ -823,7 +823,7 @@ const VIT_notExist = () => {
                     </el-table-column>
                     <el-table-column label="字段类型" prop="fieldType" width="140" align="center">
                         <template #default="{ row }">
-                            <el-form-item v-if="mixedTableDesign.dataStatus == '0' || row.dataStatus != 1"
+                            <el-form-item v-if="FD_mixedTableDesign.dataStatus == '0' || row.dataStatus != 1"
                                 prop="fieldType" :rules="VIT_required(row.fieldType)">
                                 <el-select v-model="row.fieldType" placeholder="请选择字段类型"
                                     @change="(val) => fieldTypeChange(row, val)">
@@ -837,7 +837,7 @@ const VIT_notExist = () => {
                     <el-table-column label="字段长度" prop="fieldLength" width="90" align="center">
                         <template #default="{ row }">
                             <el-form-item
-                                v-if="(mixedTableDesign.dataStatus == '0' || row.dataStatus != 1) && row.needLength"
+                                v-if="(FD_mixedTableDesign.dataStatus == '0' || row.dataStatus != 1) && row.needLength"
                                 prop="fieldLength" :rules="[VIT_required(row.fieldLength)]">
                                 <el-input v-model="row.fieldLength"
                                     v-input-filter="{ regex: /[^0-9]/g, maxLength: 4, otherMothed: (value) => value.replace(/^0+/, '') }">
@@ -850,7 +850,7 @@ const VIT_notExist = () => {
 
                     <el-table-column label="字段枚举" prop="fieldEnumArray" align="center">
                         <template #default="{ row }">
-                            <template v-if="(mixedTableDesign.dataStatus == '0' || row.dataStatus != 1) && row.canEnum">
+                            <template v-if="(FD_mixedTableDesign.dataStatus == '0' || row.dataStatus != 1) && row.canEnum">
                                 <el-tag v-for="(tag, index) in row.fieldEnumArray" :key="index"
                                     @dblclick="editEnum(row, tag, index)">
                                     <template v-if="row.editingIndex === index">
@@ -902,7 +902,7 @@ const VIT_notExist = () => {
                     </el-table-column> -->
                     <el-table-column label="操作" align="center" width="170" v-if="title_Drawer != '表设计详情'">
                         <template #default="{ row, $index }">
-                            <template v-if="mixedTableDesign.dataStatus === '0'">
+                            <template v-if="FD_mixedTableDesign.dataStatus === '0'">
                                 <el-button @click="ACT_deleteColumn(row, $index)" size="small">删除</el-button>
                             </template>
                             <template v-else>
@@ -924,7 +924,7 @@ const VIT_notExist = () => {
                 <!-- 唯一约束 -->
                 <el-divider content-position="left" style="margin-top: 70px;">唯一约束</el-divider>
 
-                <el-table :data="mixedTableDesign.list_uniqueKey" table-layout="auto">
+                <el-table :data="FD_mixedTableDesign.list_uniqueKey" table-layout="auto">
                     <el-table-column prop="uniqueKeyName" label="约束名称" align="center" width="150px">
                     </el-table-column>
                     <el-table-column label="约束字段" align="center">
@@ -933,7 +933,7 @@ const VIT_notExist = () => {
                                 :rules="[VIT_required(row.uniqueKeyColumnArray)]">
                                 <el-checkbox-group v-model="row.uniqueKeyColumnArray" :disabled="row.dataStatus != '0'">
                                     <el-checkbox-button
-                                        v-for="(value, index) in mixedTableDesign.list_tableDesignColumn"
+                                        v-for="(value, index) in FD_mixedTableDesign.list_tableDesignColumn"
                                         :value="value.columnName" :key="index">
                                         {{ value.columnName }}
                                     </el-checkbox-button>
@@ -943,7 +943,7 @@ const VIT_notExist = () => {
                     </el-table-column>
                     <el-table-column label="操作" align="center" width="170">
                         <template #default="{ row, $index }">
-                            <template v-if="mixedTableDesign.dataStatus === '0'">
+                            <template v-if="FD_mixedTableDesign.dataStatus === '0'">
                                 <el-button @click="ACT_deleteUniqueKey(row, $index)" size="small">删除</el-button>
                             </template>
                             <template v-else>
@@ -967,18 +967,18 @@ const VIT_notExist = () => {
                     <el-button type="primary" @click="ACT_addUniqueKey()"
                         v-if="title_Drawer != '表设计详情'">添加唯一约束</el-button>
                     <el-button type="primary" @click="SBM_saveTableDesign"
-                        v-if="mixedTableDesign.dataStatus == '0'">保存</el-button>
+                        v-if="FD_mixedTableDesign.dataStatus == '0'">保存</el-button>
                     <el-button type="primary" @click="SBM_createTableAndEntity"
-                        v-if="mixedTableDesign.dataStatus == '0'">创建表和实体类</el-button>
+                        v-if="FD_mixedTableDesign.dataStatus == '0'">创建表和实体类</el-button>
                     <el-button type="primary" @click="ACT_showLastSql"
-                        v-if="mixedTableDesign.dataStatus == '1'">查看最新建表语句</el-button>
+                        v-if="FD_mixedTableDesign.dataStatus == '1'">查看最新建表语句</el-button>
                 </div>
             </template>
         </el-drawer>
     </el-card>
 
     <el-dialog v-model="DLG_lastSql" title="最新建表SQL" width="1200">
-        <pre v-highlight="mixedTableDesign.last_tableDesignSql.lastCreateSql" class="sql-display"></pre>
+        <pre v-highlight="FD_mixedTableDesign.last_tableDesignSql.lastCreateSql" class="sql-display"></pre>
         <template #footer>
             <div class="dialog-footer">
                 <el-button @click="DLG_lastSql = false">关闭</el-button>
