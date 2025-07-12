@@ -41,6 +41,7 @@
         border: 1px solid red;
         border-radius: 4px;
     }
+
     .el-radio-group {
         border: 1px solid red;
         border-radius: 4px;
@@ -70,6 +71,62 @@
         box-shadow: none;
         color: hsl(222, 6%, 100%);
         cursor: not-allowed;
+    }
+}
+
+:deep(.page-container) {
+    min-height: 100%;
+    box-sizing: border-box;
+    position: relative;
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        .title {
+            display: flex;
+            align-items: center;
+
+            .field-filter-icon {
+                margin-left: 10px;
+                color: var(--el-text-color-secondary);
+                cursor: pointer;
+            }
+        }
+    }
+
+    .field-filter {
+
+        // position: absolute;
+        z-index: 1000;
+
+        right: 20px;
+        left: 20px;
+
+
+        padding: 10px;
+        background-color: var(--el-bg-color);
+        border-radius: 4px;
+        box-shadow: var(--el-box-shadow-light);
+        margin-bottom: 20px;
+
+
+        .el-checkbox-group {
+
+            .el-checkbox-button {
+                margin: 2px;
+                .el-checkbox-button__inner {
+                    border-bottom-left-radius: var(--el-border-radius-base);
+                    border-left: var(--el-border);
+                    border-top-left-radius: var(--el-border-radius-base);
+                    box-shadow: none !important;
+                    border-bottom-right-radius: var(--el-border-radius-base);
+                    border-top-right-radius: var(--el-border-radius-base);
+                }
+
+            }
+        }
     }
 }
 </style>

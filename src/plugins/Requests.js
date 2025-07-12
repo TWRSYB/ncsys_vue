@@ -53,7 +53,7 @@ class Request {
                     if (response.config.showErrorMsg !== false) {
                         ElMessage.error(response.data.message || '请求失败')
                     }
-                    return Promise.reject(new Error(response.data.message || 'Error'))
+                    // return Promise.reject(new Error(response.data.message || 'Error'))
                 } else {
                     if (response.config.showSuccessMsg === true) {
                         ElMessage.success(response.data.message || '请求成功')

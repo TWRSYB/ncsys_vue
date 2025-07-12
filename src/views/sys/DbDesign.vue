@@ -260,23 +260,37 @@ const SBM_addColumn = (row, index) => {
             return false
         }
 
-        const fieldEnumArray = row.fieldEnumArray
-        if (fieldEnumArray && fieldEnumArray.length) {
-            row.fieldEnum = fieldEnumArray.join(',')
-        } else {
-            row.fieldEnum = null
-        }
+        // 弹窗确认操作
+        ElMessageBox.confirm(
+            '添加字段前, 请先提交代码到Git?',
+            '提示',
+            {
+                confirmButtonText: '添加字段',
+                cancelButtonText: '取消',
+                type: 'warning',
+            }
+        ).then(() => {
 
-        row.tableId = FD_mixedTableDesign.value.tableId
-        row.tableName = FD_mixedTableDesign.value.tableName
+            const fieldEnumArray = row.fieldEnumArray
+            if (fieldEnumArray && fieldEnumArray.length) {
+                row.fieldEnum = fieldEnumArray.join(',')
+            } else {
+                row.fieldEnum = null
+            }
 
-        $Requests.post('/tableDesign/addColumn', row, { showSuccessMsg: true })
-            .then((response) => {
-                if (response.code === 200) {
-                    // 添加列成功, 刷新编辑页面
-                    FD_mixedTableDesign.value.list_tableDesignColumn[index] = response.data
-                }
-            })
+            row.tableId = FD_mixedTableDesign.value.tableId
+            row.tableName = FD_mixedTableDesign.value.tableName
+
+            $Requests.post('/tableDesign/addColumn', row, { showSuccessMsg: true })
+                .then((response) => {
+                    if (response.code === 200) {
+                        // 添加列成功, 刷新编辑页面
+                        FD_mixedTableDesign.value.list_tableDesignColumn[index] = response.data
+                    }
+                })
+        })
+
+
     })
 
 }
@@ -727,8 +741,9 @@ const VIT_notExist = () => {
                 :disabled="title_Drawer == '表设计详情'" size="small">
                 <el-divider content-position="left" style="margin-top: 20px;">表信息</el-divider>
 
-                <el-form-item class="itemOne" label="表分类" prop="tableType" >
-                    <el-radio-group v-model="FD_mixedTableDesign.tableType" v-if="FD_mixedTableDesign.dataStatus == '0'">
+                <el-form-item class="itemOne" label="表分类" prop="tableType">
+                    <el-radio-group v-model="FD_mixedTableDesign.tableType"
+                        v-if="FD_mixedTableDesign.dataStatus == '0'">
                         <el-radio-button v-for="(value, key, index) in OPT_tableType" :value="key" :key="key">
                             {{ value }}
                         </el-radio-button>
@@ -803,8 +818,8 @@ const VIT_notExist = () => {
                     </el-table-column>
                     <el-table-column label="是否主键" prop="keyYn" width="90" align="center">
                         <template #default="{ row }">
-                            <el-form-item v-if="FD_mixedTableDesign.dataStatus == '0' || row.dataStatus != 1" prop="keyYn"
-                                :rules="VIT_required(row.keyYn)">
+                            <el-form-item v-if="FD_mixedTableDesign.dataStatus == '0' || row.dataStatus != 1"
+                                prop="keyYn" :rules="VIT_required(row.keyYn)">
                                 <el-checkbox v-model="row.keyYn" size="large" true-value="Y" false-value="N"
                                     @change="(val) => CHG_keyYn(row, val)" />
                             </el-form-item>
@@ -850,7 +865,8 @@ const VIT_notExist = () => {
 
                     <el-table-column label="字段枚举" prop="fieldEnumArray" align="center">
                         <template #default="{ row }">
-                            <template v-if="(FD_mixedTableDesign.dataStatus == '0' || row.dataStatus != 1) && row.canEnum">
+                            <template
+                                v-if="(FD_mixedTableDesign.dataStatus == '0' || row.dataStatus != 1) && row.canEnum">
                                 <el-tag v-for="(tag, index) in row.fieldEnumArray" :key="index"
                                     @dblclick="editEnum(row, tag, index)">
                                     <template v-if="row.editingIndex === index">
