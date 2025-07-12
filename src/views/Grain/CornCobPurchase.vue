@@ -112,6 +112,11 @@ const DEALED_TDS_CornCobPurchase = computed(() => {
 
 })
 
+const SHOW_fieldFilter = ref(false) // 控制字段过滤器显示状态
+const FLD_field = ref(['tradeDate', 'sellerName', 'tradeStatus', 'threshingYn', 'clearingForm', 'actualClearingDate', 'clearingAmount'])
+
+
+
 // 过滤表设计
 const FLDTDS_CornCobPurchase = computed(() => {
     if (userInfoStore.info.roleCode == 'sysAdmin') {
@@ -131,20 +136,19 @@ const FLDTDS_CornCobPurchase = computed(() => {
 
 
 
-const SHOW_fieldFilter = ref(false) // 控制字段过滤器显示状态
-const FLD_field = ref(['tradeDate', 'sellerName', 'tradeStatus', 'threshingYn', 'clearingForm', 'unitPrice', 'totalWeight', 'totalPrice', 'premium'])
-
 
 
 
 
 //控制抽屉是否显示
-const SHOW_addTrade = ref(false)
+const SHOW_Drawer = ref(false)
+const TT_Drawer = ref('交易详情')
 const FORM_Trade = ref(null)
 const ACT_SHOW_addTrade = () => {
 
     // 显示抽屉
-    SHOW_addTrade.value = true;
+    SHOW_Drawer.value = true;
+    TT_Drawer.value = '新增交易'
     init_FD_Trade(); // 初始化表单数据
     nextTick(() => {
         // 重置表单数据
@@ -167,7 +171,6 @@ const init_FD_Trade = () => {
             personId: '', // 出售人ID
             personName: '', // 出售人姓名
             phoneNum: '', // 出售人手机号
-            address: '' // 出售人地址
         },
         qualityMouldRate: '',  // 霉菌率
         qualityHumidity: '',    // 湿度
@@ -179,6 +182,7 @@ const init_FD_Trade = () => {
         premium: '', // 溢价
         remark: '', // 备注
         tradeStatus: '', // 交易状态
+        address: '', // 出售人地址
         list_weighBeforeThresh: [], // 称重列表
         sum_weightBeforeThresh: {
             weightCount: 0, // 称重次数
@@ -318,9 +322,9 @@ const SBM_saveTrade = () => {
         $Requests.post('/cornCobPurchase/saveTrade', FD_Trade.value, { showSuccessMsg: true })
             .then(response => {
                 if (response.code === 200) {
-                    SHOW_addTrade.value = false;
+                    SHOW_Drawer.value = false;
                     ACT_GetList();
-                } else if (response.code === 555) {
+                } else if (response.code === 555 && ['manager'].includes(userInfoStore.info.roleCode)) {
                     ElMessageBox.confirm(
                         response.message,
                         '提示',
@@ -375,7 +379,7 @@ const SBM_purchaseComplete = () => {
             $Requests.post('/cornCobPurchase/purchaseComplete', FD_Trade.value, { showSuccessMsg: true })
                 .then(response => {
                     if (response.code === 200) {
-                        SHOW_addTrade.value = false;
+                        SHOW_Drawer.value = false;
                         ACT_GetList();
                     }
                 })
@@ -389,9 +393,14 @@ const ACT_EditTrade = (row) => {
     $Requests.post('/cornCobPurchase/getTradeDetail', row)
         .then(response => {
             if (response.code === 200) {
+                if (response.data.tradeStatus !== '收购中') {
+                    ElMessage.warning('只能编辑收购中的交易');
+                    return;
+                }
                 init_FD_Trade(); // 初始化表单数据
                 // 显示抽屉
-                SHOW_addTrade.value = true;
+                SHOW_Drawer.value = true;
+                TT_Drawer.value = '编辑交易'
                 nextTick(() => {
                     // 重置表单数据
                     FORM_Trade.value.resetFields();
@@ -402,6 +411,206 @@ const ACT_EditTrade = (row) => {
             }
         })
 };
+
+const ACT_detail = (row) => {
+    // 查询交易详情
+    $Requests.post('/cornCobPurchase/getTradeDetail', row)
+        .then(response => {
+            if (response.code === 200) {
+                // 成功获取交易详情
+                SHOW_Drawer.value = true
+                TT_Drawer.value = '交易详情'
+                init_FD_Trade(); // 初始化表单数据
+                nextTick(() => {
+                    // 重置表单数据
+                    FORM_Trade.value.resetFields();
+                    // 成功获取交易详情
+                    FD_Trade.value = response.data;
+                    calculateTrade();
+                })
+            }
+        })
+}
+
+
+const SHOW_Settle = ref(false) // 控制结算对话框显示状态
+const TT_Settle = ref('结算') // 结算标题
+const FD_Settle = ref({}) // 结算表单数据
+const FORM_Settle = ref(null) // 交易表单
+const ACT_SettleTrade = (row) => {
+    // 查询交易详情
+    $Requests.post('/cornCobPurchase/getTradeDetail', row)
+        .then(response => {
+            if (response.code === 200) {
+                if (response.data.tradeStatus !== '待结算') {
+                    ElMessage.warning('只能结算待结算的交易');
+                    return;
+                }
+                // 成功获取交易详情
+                SHOW_Settle.value = true
+                TT_Drawer.value = '结算'
+                init_FD_Trade(); // 初始化表单数据
+                nextTick(() => {
+                    // 重置表单数据
+                    FORM_Settle.value.resetFields();
+                    // 成功获取交易详情
+                    FD_Settle.value = response.data;
+                    FD_Settle.value.actualClearingDate = new Date().toISOString().slice(0, 10); // 设置实际结算日期为今天
+                })
+            }
+        })
+}
+
+const rules_settle = {
+    tradeDate: [
+        { required: true, message: '请选择交易日期', trigger: 'change' }
+    ],
+    totalWeight: [
+        { required: true, message: '请输入总重', trigger: 'change' }
+    ],
+    totalPrice: [
+        { required: true, message: '请输入总价', trigger: 'change' },
+        // 总价范围为0.01~100000
+        { validator: $VLD.doubleRange(0.01, 100000), trigger: 'blur' }
+    ],
+    planClearingDate: [
+        { required: true, message: '请选择计划结算日期', trigger: 'change' }
+    ],
+
+    actualClearingDate: [
+        { required: true, message: '请选择实际结算日期', trigger: 'change' }
+    ],
+    premium: [
+        { required: true, message: '请输入补价', trigger: 'change' },
+        { validator: $VLD.doubleRange(-2000, 2000), trigger: 'blur' }
+    ]
+}
+
+const calculateSettle = computed(() => {
+    // 计算结算金额
+    let { totalPrice, premium } = FD_Settle.value
+    if (totalPrice && premium) {
+        return { clearingAmount: (Number(totalPrice) + Number(premium)).toFixed(2) }
+    } else {
+        return { clearingAmount: Number(totalPrice) }
+    }
+})
+
+const SBM_Settle = () => {
+    FORM_Settle.value.validate((valid, fields) => {
+        if (!valid) {
+            // 表单校验不通过
+            ElMessage.warning('请检查输入项');
+            return false;
+        }
+
+        // 补价绝对值超过总价的30%则阻止, 超过10%则弹窗确认
+        if (Math.abs(FD_Settle.value.premium) > FD_Settle.value.totalPrice * 0.3) {
+            ElMessage.warning('补价超过总价的30%, 若继续结算请联系系统管理员');
+            return false;
+        } else if (Math.abs(FD_Settle.value.premium) > FD_Settle.value.totalPrice * 0.1) {
+            ElMessageBox.confirm('补价超过总价的10%, 是否继续结算？', '提示', {
+                confirmButtonText: '继续结算',
+                cancelButtonText: '取消结算',
+                type: 'warning'
+            }).then(() => {
+                // 继续结算
+                settleTrade();
+            }).catch(() => {
+                // 取消结算
+                return false;
+            });
+        } else {
+            settleTrade()
+        }
+
+    });
+}
+
+const settleTrade = () => {
+    // 计算结算金额
+    FD_Settle.value.clearingAmount = calculateSettle.value.clearingAmount;
+    // 提交结算
+    $Requests.post('/cornCobPurchase/settleTrade', FD_Settle.value, { showSuccessMsg: true })
+        .then(response => {
+            if (response.code === 200) {
+                SHOW_Settle.value = false;
+                ACT_GetList();
+            }
+        })
+}
+
+
+const likePersonList = ref([])
+
+const getPersonLike = (queryString, cb, fieldName) => {
+
+    console.log(queryString);
+
+
+    if (!queryString) {
+        console.log("no queryString");
+
+        return cb([])
+    }
+    if (fieldName === 'phoneNum' && queryString.length < 3) {
+        console.log("phoneNum length < 3");
+
+        return cb([])
+    }
+    if (fieldName === 'personName' && queryString.length < 1) {
+        console.log("personName length < 1");
+        return cb([])
+    }
+
+    // 根据手机号模糊查询人员
+    $Requests.post('/person/getPersonLike', { [fieldName]: queryString }, { showLoading: false, showErrorMsg: false })
+        .then(response => {
+            if (response.code === 200) {
+                // 成功获取人员列表
+                likePersonList.value = response.data
+                return cb(response.data)
+            } else {
+                return cb([])
+            }
+        }).catch(error => {
+            return cb([])
+        })
+
+}
+
+
+const handleSelectPerson = (item) => {
+    FD_Trade.value.sellerInfo = item
+    // 判断地址列表是否是数组
+    if (Array.isArray(item.addressList) && item.addressList.length > 0) {
+        FD_Trade.value.address = item.addressList[0]
+    }
+}
+
+const getPersonAddressList = (queryString, cb) => {
+    if (!likePersonList.value || likePersonList.value.length === 0) {
+        console.log("no likePersonList");
+        return cb([])
+    }
+    // 获取手机号对应人员的地址列表
+    for (const person of likePersonList.value) {
+        if (person.phoneNum === FD_Trade.value.sellerInfo.phoneNum) {
+            // 找到对应人员
+            console.log("found person", person);
+            const addressList = []
+            for (const address of person.addressList) {
+                addressList.push({
+                    value: address,
+                    label: address
+                })
+            }
+            return cb(addressList)
+        }
+    }
+    return cb([])
+}
+
 
 
 
@@ -475,10 +684,19 @@ const ACT_EditTrade = (row) => {
             <el-table-column label="操作" width="100"
                 v-if="['sysAdmin', 'manager', 'operator'].includes(userInfoStore.info.roleCode)">
                 <template #default="{ row }">
+                    <el-icon style="margin: 0 3px;" @click="ACT_detail(row)">
+                        <Tickets />
+                    </el-icon>
                     <el-button icon="Edit" circle plain type="primary"
-                        v-if="row.dataStatus == 0 && row.tradeStatus == '收购中'" @click="ACT_EditTrade(row)"></el-button>
+                        v-if="row.dataStatus == 0 && row.tradeStatus == '收购中'" @click="ACT_EditTrade(row)">
+                    </el-button>
                     <el-button icon="Delete" circle plain type="danger"
-                        v-if="row.dataStatus == 0 && row.tradeStatus == '收购中' && ['manager'].includes(userInfoStore.info.roleCode)"></el-button>
+                        v-if="row.dataStatus == 0 && row.tradeStatus == '收购中' && ['manager'].includes(userInfoStore.info.roleCode)">
+                    </el-button>
+                    <el-icon style="margin: 0 3px;" @click="ACT_SettleTrade(row)"
+                        v-if="['manager'].includes(userInfoStore.info.roleCode) && row.tradeStatus == '待结算'">
+                        <SVG_Settle />
+                    </el-icon>
                 </template>
             </el-table-column>
             <template #empty>
@@ -494,17 +712,19 @@ const ACT_EditTrade = (row) => {
             @current-change="onCurrentChange" style="margin-top: 20px; justify-content: flex-end" /> -->
 
         <!-- 新增 -->
-        <el-drawer v-model="SHOW_addTrade" title="新增收购" direction="rtl" size="80%">
-            <el-form ref="FORM_Trade" :model="FD_Trade" label-width="110px" :rules="rules">
+        <el-drawer v-model="SHOW_Drawer" :title="TT_Drawer" direction="rtl" size="80%">
+            <el-form ref="FORM_Trade" :model="FD_Trade" label-width="110px" :rules="rules"
+                :disabled="TT_Drawer == '交易详情'">
                 <el-row>
                     <el-form-item label="交易日期" prop="tradeDate" v-inline-flex>
                         <el-date-picker v-model="FD_Trade.tradeDate" placeholder="交易日期" value-format="YYYY-MM-DD">
                         </el-date-picker>
+                        <!-- <span v-else>{{ FD_mixedTableDesign.tableName }}</span> -->
                     </el-form-item>
                     <el-form-item label="是否脱粒" prop="threshingYn" v-inline-flex>
                         <el-radio-group v-model="FD_Trade.threshingYn">
                             <el-radio-button v-for="(value, key, index) in OPT_YN" :key="key" :value="key">{{ value
-                                }}</el-radio-button>
+                            }}</el-radio-button>
                         </el-radio-group>
                     </el-form-item>
                     <el-form-item label="结算方式" prop="clearingForm" v-inline-flex>
@@ -545,14 +765,43 @@ const ACT_EditTrade = (row) => {
 
                 <el-divider content-position="left" style="margin-top: 70px;">出售人</el-divider>
 
+                <!-- <el-form-item label="手机号" prop="sellerInfo.phoneNum" style="width: 25%;display: inline-flex;">
+                    <el-input v-model="FD_Trade.sellerInfo.phoneNum" placeholder="手机号" v-input-int></el-input>
+                </el-form-item> -->
                 <el-form-item label="手机号" prop="sellerInfo.phoneNum" style="width: 25%;display: inline-flex;">
-                    <el-input v-model="FD_Trade.sellerInfo.phoneNum" placeholder="手机号"></el-input>
+                    <el-autocomplete v-model="FD_Trade.sellerInfo.phoneNum"
+                        :fetch-suggestions="(queryString, cb) => getPersonLike(queryString, cb, 'phoneNum')"
+                        placeholder="手机号" @select="handleSelectPerson" :trigger-on-focus="false" :hide-loading="true">
+                        <template #default="{ item }">
+                            <div style="display: flex; width: 500px;">
+                                <div style="width: 200px;">{{ item.phoneNum }}</div>
+                                <div style="width: 200px;">{{ item.personName }}</div>
+                            </div>
+                        </template>
+                    </el-autocomplete>
                 </el-form-item>
-                <el-form-item label="姓名" prop="sellerInfo.personName" style="width: 25%;display: inline-flex;">
+                <!-- <el-form-item label="姓名" prop="sellerInfo.personName" style="width: 25%;display: inline-flex;">
                     <el-input v-model="FD_Trade.sellerInfo.personName" placeholder="姓名"></el-input>
+                </el-form-item> -->
+                <el-form-item label="姓名" prop="sellerInfo.personName" style="width: 25%;display: inline-flex;">
+                    <el-autocomplete v-model="FD_Trade.sellerInfo.personName" placement="bottom-end"
+                        :fetch-suggestions="(queryString, cb) => getPersonLike(queryString, cb, 'personName')"
+                        placeholder="姓名" @select="handleSelectPerson" :trigger-on-focus="false" :hide-loading="true">
+                        <template #default="{ item }">
+                            <div style="display: flex; width: 500px;">
+                                <div style="width: 200px;">{{ item.phoneNum }}</div>
+                                <div style="width: 200px;">{{ item.personName }}</div>
+                            </div>
+                        </template>
+                    </el-autocomplete>
                 </el-form-item>
-                <el-form-item label="地址" prop="sellerInfo.address" style="width: 40%;display: inline-flex;">
-                    <el-input v-model="FD_Trade.sellerInfo.address" placeholder="地址"></el-input>
+                <!-- <el-form-item label="地址" prop="address" style="width: 40%;display: inline-flex;">
+                    <el-input v-model="FD_Trade.address" placeholder="地址"></el-input>
+                </el-form-item> -->
+                <el-form-item label="地址" prop="address" style="width: 25%;display: inline-flex;">
+                    <el-autocomplete v-model="FD_Trade.address" placement="bottom-end"
+                        :fetch-suggestions="getPersonAddressList" placeholder="地址">
+                    </el-autocomplete>
                 </el-form-item>
 
 
@@ -622,13 +871,13 @@ const ACT_EditTrade = (row) => {
                             <span>合计</span>
                             <div>
                                 <span>毛重:</span>&nbsp;<span>{{ FD_Trade.sum_weightBeforeThresh.grossWeight
-                                    }}&nbsp;</span><span>kg</span>
+                                }}&nbsp;</span><span>kg</span>
                                 &nbsp;&nbsp;&nbsp;
                                 <span>皮重:</span>&nbsp;<span>{{ FD_Trade.sum_weightBeforeThresh.tareWeight
-                                    }}&nbsp;</span><span>kg</span>
+                                }}&nbsp;</span><span>kg</span>
                                 &nbsp;&nbsp;&nbsp;
                                 <span>净重:</span>&nbsp;<span>{{ FD_Trade.sum_weightBeforeThresh.netWeight
-                                    }}&nbsp;</span><span>kg</span>
+                                }}&nbsp;</span><span>kg</span>
                             </div>
                         </div>
                     </template>
@@ -684,21 +933,17 @@ const ACT_EditTrade = (row) => {
                             <span>合计</span>
                             <div>
                                 <span>毛重:</span>&nbsp;<span>{{ FD_Trade.sum_weightAfterThresh.grossWeight
-                                    }}&nbsp;</span><span>T</span>
+                                }}&nbsp;</span><span>T</span>
                                 &nbsp;&nbsp;&nbsp;
                                 <span>皮重:</span>&nbsp;<span>{{ FD_Trade.sum_weightAfterThresh.tareWeight
-                                    }}&nbsp;</span><span>T</span>
+                                }}&nbsp;</span><span>T</span>
                                 &nbsp;&nbsp;&nbsp;
                                 <span>净重:</span>&nbsp;<span>{{ FD_Trade.sum_weightAfterThresh.netWeight
-                                    }}&nbsp;</span><span>T</span>
+                                }}&nbsp;</span><span>T</span>
                             </div>
                         </div>
                     </template>
                 </el-card>
-
-
-
-
             </el-form>
 
             <template #footer>
@@ -716,47 +961,69 @@ const ACT_EditTrade = (row) => {
                 </div>
             </template>
             {{ FD_Trade }}
-            {{ TDS_CornCobPurchaseWeighRecord }}
         </el-drawer>
     </el-card>
+    <el-dialog v-model="SHOW_Settle" :title="TT_Settle" width="1200">
+        <el-form ref="FORM_Settle" :model="FD_Settle" label-width="110px" :rules="rules_settle">
+            <el-row>
+                <!-- 交易日期 -->
+                <el-form-item label="交易日期" prop="tradeDate" v-inline-flex>
+                    <el-date-picker v-model="FD_Settle.tradeDate" value-format="YYYY-MM-DD" disabled></el-date-picker>
+                </el-form-item>
+                <!-- 总重 -->
+                <el-form-item label="总重" prop="totalWeight" v-inline-flex>
+                    <el-input v-model="FD_Settle.totalWeight" placeholder="请输入总重" disabled>
+                        <template #append>kg</template>
+                    </el-input>
+                </el-form-item>
+                <el-form-item label="总价" prop="totalPrice" v-inline-flex>
+                    <el-input v-model="FD_Settle.totalPrice" placeholder="请输入总价" disabled>
+                        <template #append>元</template>
+                    </el-input>
+                </el-form-item>
+                <!-- 计划结算日期 -->
+                <el-form-item v-if="FD_Settle.clearingForm == '延结'" label="计划结算日期" prop="planClearingDate"
+                    v-inline-flex>
+                    <el-date-picker v-model="FD_Settle.planClearingDate" value-format="YYYY-MM-DD"
+                        disabled></el-date-picker>
+                </el-form-item>
+            </el-row>
+
+            <el-row>
+                <el-form-item label="实际结算日期" prop="actualClearingDate" v-inline-flex>
+                    <el-date-picker v-model="FD_Settle.actualClearingDate" placeholder="选择日期"
+                        value-format="YYYY-MM-DD"></el-date-picker>
+                </el-form-item>
+                <el-form-item label="补价" prop="premium" v-inline-flex>
+                    <el-input v-model="FD_Settle.premium" placeholder="请输入补价" v-input-double="3">
+                        <template #append>元</template>
+                    </el-input>
+                </el-form-item>
+            </el-row>
+
+            <el-form-item label="备注" prop="remark">
+                <el-input v-model="FD_Settle.remark" type="textarea" placeholder="请输入备注内容"></el-input>
+            </el-form-item>
+        </el-form>
+        <template #footer>
+            <div class="dialog-footer">
+                <div>
+                    <!-- 最终结算金额 -->
+                    <span>最终结算金额: {{ calculateSettle.clearingAmount }} 元</span>
+                </div>
+                <div>
+                    <el-button type="primary" @click="SBM_Settle">结算</el-button>
+                </div>
+            </div>
+        </template>
+    </el-dialog>
 </template>
 <style lang="scss" scoped>
-// /* 抽屉样式 */
-// .avatar-uploader {
-//     :deep() {
-//         .avatar {
-//             width: 178px;
-//             height: 178px;
-//             display: block;
-//         }
-
-//         .el-upload {
-//             border: 1px dashed var(--el-border-color);
-//             border-radius: 6px;
-//             cursor: pointer;
-//             position: relative;
-//             overflow: hidden;
-//             transition: var(--el-transition-duration-fast);
-//         }
-
-//         .el-upload:hover {
-//             border-color: var(--el-color-primary);
-//         }
-
-//         .el-icon.avatar-uploader-icon {
-//             font-size: 28px;
-//             color: #8c939d;
-//             width: 178px;
-//             height: 178px;
-//             text-align: center;
-//         }
-//     }
-// }
-
-// .editor {
-//     width: 100%;
-
-//     :deep(.ql-editor) {
-//         min-height: 200px;
-//     }
-// }</style>
+.dialog-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #7d8087;
+    font-size: 18px;
+}
+</style>

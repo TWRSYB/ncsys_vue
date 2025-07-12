@@ -12,42 +12,46 @@ export default {
             // 判断是否是负数
             let isNegative = newValue.startsWith('-') ? '-' : '';
 
+
+
             // 去除非数字和小数点的字符
             newValue = newValue.replace(/[^0-9.]/g, '');
-            if (newValue != '') {
-                let a = newValue.split('.');
-                if (a.length == 1) {
-                    // 如果没有小数点
+
+            let a = newValue.split('.');
+            if (a.length == 1) {
+                
+                // 如果没有小数点
+                if (type == 1) {
+                    newValue = a[0].replace(/^0+/, '');
+                } else if (type == 2) {
+                    newValue = /^0+$/.test(a[0]) ? '0' : a[0].replace(/^0+/, '');
+                } else {
+                    
+                    newValue = isNegative + (/^0+$/.test(a[0]) ? '0' : a[0].replace(/^0+/, ''));
+                }
+            } else {
+                // 如果有小数点
+                if (a[0] == '0' || a[0] == '') {
+                    // 如果整数部分是0或者空
                     if (type == 1) {
-                        newValue = a[0].replace(/^0+/, '');
+                        newValue = '0.' + a[1].slice(0, precision);
                     } else if (type == 2) {
-                        newValue = /^0+$/.test(a[0]) ? '0' : a[0].replace(/^0+/, '');
+                        newValue = '0.' + a[1].slice(0, precision);
                     } else {
-                        newValue = isNegative + /^0+$/.test(a[0]) ? '0' : a[0].replace(/^0+/, '');
+                        newValue = isNegative + '0.' + a[1].slice(0, precision);
                     }
                 } else {
-                    // 如果有小数点
-                    if (a[0] == '0' || a[0] == '') {
-                        // 如果整数部分是0或者空
-                        if (type == 1) {
-                            newValue = '0.' + a[1].slice(0, precision);
-                        } else if (type == 2) {
-                            newValue = '0.' + a[1].slice(0, precision);
-                        } else {
-                            newValue = isNegative + '0.' + a[1].slice(0, precision);
-                        }
+                    // 如果整数部分不是0
+                    if (type == 1) {
+                        newValue = a[0].replace(/^0+/, '') + '.' + a[1].slice(0, precision);
+                    } else if (type == 2) {
+                        newValue = /^0+$/.test(a[0]) ? '0' : a[0].replace(/^0+/, '') + '.' + a[1].slice(0, precision);
                     } else {
-                        // 如果整数部分不是0
-                        if (type == 1) {
-                            newValue = a[0].replace(/^0+/, '') + '.' + a[1].slice(0, precision);
-                        } else if (type == 2) {
-                            newValue = /^0+$/.test(a[0]) ? '0' : a[0].replace(/^0+/, '') + '.' + a[1].slice(0, precision);
-                        } else {
-                            newValue = isNegative + /^0+$/.test(a[0]) ? '0' : a[0].replace(/^0+/, '') + '.' + a[1].slice(0, precision);
-                        }
+                        newValue = isNegative + (/^0+$/.test(a[0]) ? '0' : a[0].replace(/^0+/, '')) + '.' + a[1].slice(0, precision);
                     }
                 }
             }
+
 
 
             // 如果新值和原值不同，则更新输入框的值
@@ -59,6 +63,7 @@ export default {
         });
 
         inputElement.addEventListener('blur', () => {
+            
             let newValue = inputElement.value;
             // 如果是空值则退出
             if (newValue === '') {

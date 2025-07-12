@@ -79,7 +79,7 @@ const list_tableDesign = ref([])
 
 
 //控制抽屉是否显示
-const visibleDrawer = ref(false)
+const SHOW_Drawer = ref(false)
 const title_Drawer = ref('')
 
 const FD_mixedTableDesign = ref({})
@@ -106,7 +106,7 @@ const ACT_showTableDesign = (row) => {
         if (response.code !== 200) {
             return
         }
-        visibleDrawer.value = true
+        SHOW_Drawer.value = true
         title_Drawer.value = '表设计详情'
         init_mixedTableDesign()
         nextTick(() => {
@@ -125,7 +125,7 @@ const ACT_editTableDesign = (tableName) => {
         if (response.code !== 200) {
             return
         }
-        visibleDrawer.value = true
+        SHOW_Drawer.value = true
         title_Drawer.value = '修改表设计'
         init_mixedTableDesign()
         nextTick(() => {
@@ -139,7 +139,7 @@ const ACT_editTableDesign = (tableName) => {
 }
 
 const ACT_addTable = () => {
-    visibleDrawer.value = true
+    SHOW_Drawer.value = true
     title_Drawer.value = '新增表'
     init_mixedTableDesign()
     nextTick(() => {
@@ -182,7 +182,7 @@ const SBM_saveTableDesign = () => {
             .then((response) => {
                 if (response.code === 200) {
                     // 保存成功, 刷新列表
-                    visibleDrawer.value = false
+                    SHOW_Drawer.value = false
                     ACT_getTableDesignList()
                 }
             })
@@ -216,7 +216,7 @@ const SBM_createTableAndEntity = () => {
                 .then((response) => {
                     if (response.code === 200) {
                         // 跳转首页
-                        visibleDrawer.value = false
+                        SHOW_Drawer.value = false
                         ACT_getTableDesignList()
                     }
                 })
@@ -735,7 +735,7 @@ const VIT_notExist = () => {
         {{ TDS_TableDesign }}
 
         <!-- 抽屉 -->
-        <el-drawer v-model="visibleDrawer" :title="title_Drawer" direction="rtl" size="90%">
+        <el-drawer v-model="SHOW_Drawer" :title="title_Drawer" direction="rtl" size="90%">
             <!-- 新增表表单 -->
             <el-form ref="FORM_addTable" :model="FD_mixedTableDesign" label-width="100px" :rules="rules"
                 :disabled="title_Drawer == '表设计详情'" size="small">
@@ -1029,30 +1029,7 @@ const VIT_notExist = () => {
     }
 }
 
-/* 穿透 scoped 作用域，直接修改子组件样式 */
-:deep(.el-table) {
-    .el-form-item__content {
-        margin-left: 0 !important;
-        justify-content: center;
-    }
 
-    .el-form-item {
-        display: flex;
-        --font-size: 14px;
-        margin-bottom: 0;
-    }
-
-    .el-checkbox-button.is-disabled.is-checked .el-checkbox-button__inner {
-        // background-color: var(--el-checkbox-button-checked-bg-color);
-        // background-color: hsl(0, 59%, 45%);
-        background-color: hsl(207, 100%, 80%);
-        background-image: none;
-        border-color: var(--el-button-disabled-border-color, var(--el-border-color-light));
-        box-shadow: none;
-        color: hsl(222, 6%, 100%);
-        cursor: not-allowed;
-    }
-}
 
 :deep(.el-divider--horizontal) {
     border-top: 2px var(--el-border-color) var(--el-border-style);
