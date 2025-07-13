@@ -57,6 +57,9 @@ export default defineConfig({
                 changeOrigin: true,
                 // rewrite: (path) => path.replace(/^\/api/, '')
             }
-        }
+        },
+        // 允许其他设备访问
+        host: '0.0.0.0',
+        port: 5173
     }
 })

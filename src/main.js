@@ -21,6 +21,7 @@ import inputEnOnlyDirective from '@/directives/input-en-only'
 import styleInlineFlex from '@/directives/inline-flex'
 import inputInt from '@/directives/input-int'
 import inputDouble from '@/directives/input-double'
+import clickOutside from '@/directives/click-outside'
 
 
 
@@ -65,4 +66,5 @@ app.directive('highlight', highlightDirective); // 注册高亮指令
 app.directive('inline-flex', styleInlineFlex); // 注册inline-flex指令
 app.directive('input-int', inputInt)  // 注册input整数指令
 app.directive('input-double', inputDouble) // 注册input双精度指令
+app.directive('click-outside', clickOutside) // 注册点击外部指令
 app.mount('#app')

@@ -111,7 +111,7 @@
 
     .field-filter {
 
-        // position: absolute;
+        position: absolute;
         z-index: 1000;
 
         right: 20px;
@@ -122,13 +122,14 @@
         background-color: var(--el-bg-color);
         border-radius: 4px;
         box-shadow: var(--el-box-shadow-light);
-        margin-bottom: 20px;
+        margin: 10px 20px 20px;
 
 
         .el-checkbox-group {
 
             .el-checkbox-button {
                 margin: 2px;
+
                 .el-checkbox-button__inner {
                     border-bottom-left-radius: var(--el-border-radius-base);
                     border-left: var(--el-border);
@@ -141,5 +142,14 @@
             }
         }
     }
+
+
+}
+
+
+
+:deep().el-pagination {
+    margin-top: 20px;
+    justify-content: flex-end
 }
 </style>

@@ -1,7 +1,6 @@
 <script setup>
 
 import { useUserInfoStore } from '@/stores/userInfo';
-import { computed } from 'vue';
 const userInfoStore = useUserInfoStore()
 
 
@@ -293,7 +292,7 @@ const calculateTrade1 = (list, sum) => {
     if (list.length > 0) {
         list.forEach((row) => {
             if (row.grossWeight && (row.tareWeight || row.tareWeight === 0)) {
-                
+
                 if (Number(row.tareWeight) >= Number(row.grossWeight)) {
                     row.netWeight = '毛重必须大于皮重'
                     return
@@ -318,6 +317,10 @@ const SBM_saveTrade = () => {
             ElMessage.warning('录入必要的信息后才能保存');
             return false;
         }
+
+        FD_Trade.value.totalWeight = calculateTrade2.value.totalWeight; // 设置总重量
+        FD_Trade.value.totalPrice = calculateTrade2.value.totalPrice; // 设置总价
+
         // 提交保存收购
         $Requests.post('/cornCobPurchase/saveTrade', FD_Trade.value, { showSuccessMsg: true })
             .then(response => {
@@ -545,21 +548,14 @@ const likePersonList = ref([])
 
 const getPersonLike = (queryString, cb, fieldName) => {
 
-    console.log(queryString);
-
 
     if (!queryString) {
-        console.log("no queryString");
-
         return cb([])
     }
     if (fieldName === 'phoneNum' && queryString.length < 3) {
-        console.log("phoneNum length < 3");
-
         return cb([])
     }
     if (fieldName === 'personName' && queryString.length < 1) {
-        console.log("personName length < 1");
         return cb([])
     }
 
@@ -590,14 +586,12 @@ const handleSelectPerson = (item) => {
 
 const getPersonAddressList = (queryString, cb) => {
     if (!likePersonList.value || likePersonList.value.length === 0) {
-        console.log("no likePersonList");
         return cb([])
     }
     // 获取手机号对应人员的地址列表
     for (const person of likePersonList.value) {
         if (person.phoneNum === FD_Trade.value.sellerInfo.phoneNum) {
             // 找到对应人员
-            console.log("found person", person);
             const addressList = []
             for (const address of person.addressList) {
                 addressList.push({
@@ -611,6 +605,11 @@ const getPersonAddressList = (queryString, cb) => {
     return cb([])
 }
 
+const ACT_deleteTrade = (trade) => {
+    ElMessage.warning('删除交易功能暂未开放, 请联系管理员');
+}
+
+
 
 
 
@@ -620,26 +619,28 @@ const getPersonAddressList = (queryString, cb) => {
         <template #header>
             <div class="header">
                 <div class="title">
-                    <span> 玉米棒收购 </span>
-                    <el-icon class="field-filter-icon" @click="SHOW_fieldFilter = !SHOW_fieldFilter"
+                    <div> 玉米棒收购 </div>
+                    <el-icon class="field-filter-icon" @click.stop="SHOW_fieldFilter = !SHOW_fieldFilter"
                         v-if="['sysAdmin', 'manager'].includes(userInfoStore.info.roleCode)">
-                        <MoreFilled />
+                        <SVG_Table />
                     </el-icon>
                 </div>
 
                 <div class="extra">
-                    <el-button type="primary" @click="ACT_GetList">刷新</el-button>
                     <el-button type="primary" @click="ACT_SHOW_addTrade"
                         v-if="['sysAdmin', 'manager', 'operator'].includes(userInfoStore.info.roleCode)">新增交易</el-button>
                 </div>
             </div>
+            <div class="field-filter" v-if="SHOW_fieldFilter" v-click-outside="() => SHOW_fieldFilter = false">
+                <el-checkbox-group v-model="FLD_field" style="display: flex; flex-wrap: wrap;">
+                    <el-checkbox-button v-for="(field, index) in DEALED_TDS_CornCobPurchase" :key="index"
+                        :value="field.columnName">
+                        {{ field.columnComment }}
+                    </el-checkbox-button>
+                </el-checkbox-group>
+            </div>
         </template>
-        <div class="field-filter" v-show="SHOW_fieldFilter">
-            <el-checkbox-group v-model="FLD_field" style="display: flex; flex-wrap: wrap;">
-                <el-checkbox-button v-for="(field, index) in DEALED_TDS_CornCobPurchase" :key="index"
-                    :value="field.columnName">{{ field.columnComment }}</el-checkbox-button>
-            </el-checkbox-group>
-        </div>
+
 
         <!-- 搜索表单 -->
         <el-form inline ref="FORM_Search" :model="QUERY_Main.params" label-width="100px" class="search-form">
@@ -687,13 +688,15 @@ const getPersonAddressList = (queryString, cb) => {
                     <el-icon style="margin: 0 3px;" @click="ACT_detail(row)">
                         <Tickets />
                     </el-icon>
-                    <el-button icon="Edit" circle plain type="primary"
+                    <el-icon color="#409EFF" style="margin: 0 3px;"
                         v-if="row.dataStatus == 0 && row.tradeStatus == '收购中'" @click="ACT_EditTrade(row)">
-                    </el-button>
-                    <el-button icon="Delete" circle plain type="danger"
+                        <Edit />
+                    </el-icon>
+                    <el-icon color="#F56C6C" style="margin: 0 3px;" @click="ACT_deleteTrade(row)"
                         v-if="row.dataStatus == 0 && row.tradeStatus == '收购中' && ['manager'].includes(userInfoStore.info.roleCode)">
-                    </el-button>
-                    <el-icon style="margin: 0 3px;" @click="ACT_SettleTrade(row)"
+                        <Delete />
+                    </el-icon>
+                    <el-icon color="#E6A23C" style="margin: 0 3px;" @click="ACT_SettleTrade(row)"
                         v-if="['manager'].includes(userInfoStore.info.roleCode) && row.tradeStatus == '待结算'">
                         <SVG_Settle />
                     </el-icon>
@@ -703,13 +706,11 @@ const getPersonAddressList = (queryString, cb) => {
                 <el-empty description="没有数据" />
             </template>
         </el-table>
-        <!-- {{ TDS_CornCobPurchase }} -->
-        <br />
-        {{ FD_Trade }}
+
         <!-- 分页条 -->
-        <!-- <el-pagination v-model:current-page="pageNum" v-model:page-size="pageSize" :page-sizes="[3, 5, 10, 15]"
-            layout="jumper, total, sizes, prev, pager, next" background :total="total" @size-change="onSizeChange"
-            @current-change="onCurrentChange" style="margin-top: 20px; justify-content: flex-end" /> -->
+        <el-pagination v-model:current-page="QUERY_Main.pageNum" v-model:page-size="QUERY_Main.pageSize"
+            :total="QUERY_Main.total" :page-sizes="[10, 20, 50, 100]" @change="ACT_GetList"
+            layout="jumper, total, sizes, prev, pager, next" />
 
         <!-- 新增 -->
         <el-drawer v-model="SHOW_Drawer" :title="TT_Drawer" direction="rtl" size="80%">
@@ -719,12 +720,12 @@ const getPersonAddressList = (queryString, cb) => {
                     <el-form-item label="交易日期" prop="tradeDate" v-inline-flex>
                         <el-date-picker v-model="FD_Trade.tradeDate" placeholder="交易日期" value-format="YYYY-MM-DD">
                         </el-date-picker>
-                        <!-- <span v-else>{{ FD_mixedTableDesign.tableName }}</span> -->
                     </el-form-item>
                     <el-form-item label="是否脱粒" prop="threshingYn" v-inline-flex>
                         <el-radio-group v-model="FD_Trade.threshingYn">
-                            <el-radio-button v-for="(value, key, index) in OPT_YN" :key="key" :value="key">{{ value
-                            }}</el-radio-button>
+                            <el-radio-button v-for="(value, key, index) in OPT_YN" :key="key" :value="key">
+                                {{ value }}
+                            </el-radio-button>
                         </el-radio-group>
                     </el-form-item>
                     <el-form-item label="结算方式" prop="clearingForm" v-inline-flex>
@@ -758,6 +759,41 @@ const getPersonAddressList = (queryString, cb) => {
                     </el-form-item>
                 </el-row>
 
+                <el-row v-if="TT_Drawer === '交易详情'">
+                    <el-form-item label="总重量" prop="totalWeight" v-inline-flex>
+                        <el-input v-model="FD_Trade.totalWeight" placeholder="总重量" v-input-double disabled>
+                            <template #append>kg</template>
+                        </el-input>
+                    </el-form-item>
+                    <el-form-item label="总价" prop="totalPrice" v-inline-flex>
+                        <el-input v-model="FD_Trade.totalPrice" placeholder="总价" v-input-double disabled>
+                            <template #append>元</template>
+                        </el-input>
+                    </el-form-item>
+                    <el-form-item label="交易状态" prop="tradeStatus" v-inline-flex>
+                        <el-select placeholder="请选择" v-model="FD_Trade.tradeStatus" clearable>
+                            <el-option v-for="(item) in OPT_tradeStatus" :key="item" :label="item"
+                                :value="item"></el-option>
+                        </el-select>
+                    </el-form-item>
+                </el-row>
+                <el-row v-if="TT_Drawer === '交易详情'">
+                    <el-form-item label="实际结算日期" prop="actualClearingDate" v-inline-flex>
+                        <el-date-picker v-model="FD_Trade.actualClearingDate" placeholder="选择日期"
+                            value-format="YYYY-MM-DD">
+                        </el-date-picker>
+                    </el-form-item>
+                    <el-form-item label="补价" prop="premium" v-inline-flex>
+                        <el-input v-model="FD_Trade.premium" placeholder="补价" v-input-double @paste.prevent>
+                            <template #append>元</template>
+                        </el-input>
+                    </el-form-item>
+                    <el-form-item label="实际结算金额" prop="clearingAmount">
+                        <el-input v-model="FD_Trade.clearingAmount"></el-input>
+                    </el-form-item>
+                </el-row>
+
+
 
                 <el-form-item label="备注" prop="remark">
                     <el-input v-model="FD_Trade.remark" type="textarea" placeholder="备注" autosize></el-input>
@@ -768,7 +804,7 @@ const getPersonAddressList = (queryString, cb) => {
                 <!-- <el-form-item label="手机号" prop="sellerInfo.phoneNum" style="width: 25%;display: inline-flex;">
                     <el-input v-model="FD_Trade.sellerInfo.phoneNum" placeholder="手机号" v-input-int></el-input>
                 </el-form-item> -->
-                <el-form-item label="手机号" prop="sellerInfo.phoneNum" style="width: 25%;display: inline-flex;">
+                <el-form-item label="手机号" prop="sellerInfo.phoneNum" v-inline-flex>
                     <el-autocomplete v-model="FD_Trade.sellerInfo.phoneNum"
                         :fetch-suggestions="(queryString, cb) => getPersonLike(queryString, cb, 'phoneNum')"
                         placeholder="手机号" @select="handleSelectPerson" :trigger-on-focus="false" :hide-loading="true">
@@ -783,7 +819,7 @@ const getPersonAddressList = (queryString, cb) => {
                 <!-- <el-form-item label="姓名" prop="sellerInfo.personName" style="width: 25%;display: inline-flex;">
                     <el-input v-model="FD_Trade.sellerInfo.personName" placeholder="姓名"></el-input>
                 </el-form-item> -->
-                <el-form-item label="姓名" prop="sellerInfo.personName" style="width: 25%;display: inline-flex;">
+                <el-form-item label="姓名" prop="sellerInfo.personName" v-inline-flex>
                     <el-autocomplete v-model="FD_Trade.sellerInfo.personName" placement="bottom-end"
                         :fetch-suggestions="(queryString, cb) => getPersonLike(queryString, cb, 'personName')"
                         placeholder="姓名" @select="handleSelectPerson" :trigger-on-focus="false" :hide-loading="true">
@@ -798,7 +834,7 @@ const getPersonAddressList = (queryString, cb) => {
                 <!-- <el-form-item label="地址" prop="address" style="width: 40%;display: inline-flex;">
                     <el-input v-model="FD_Trade.address" placeholder="地址"></el-input>
                 </el-form-item> -->
-                <el-form-item label="地址" prop="address" style="width: 25%;display: inline-flex;">
+                <el-form-item label="地址" prop="address" v-inline-flex="50">
                     <el-autocomplete v-model="FD_Trade.address" placement="bottom-end"
                         :fetch-suggestions="getPersonAddressList" placeholder="地址">
                     </el-autocomplete>
@@ -933,13 +969,13 @@ const getPersonAddressList = (queryString, cb) => {
                             <span>合计</span>
                             <div>
                                 <span>毛重:</span>&nbsp;<span>{{ FD_Trade.sum_weightAfterThresh.grossWeight
-                                }}&nbsp;</span><span>T</span>
+                                }}&nbsp;</span><span>kg</span>
                                 &nbsp;&nbsp;&nbsp;
                                 <span>皮重:</span>&nbsp;<span>{{ FD_Trade.sum_weightAfterThresh.tareWeight
-                                }}&nbsp;</span><span>T</span>
+                                }}&nbsp;</span><span>kg</span>
                                 &nbsp;&nbsp;&nbsp;
                                 <span>净重:</span>&nbsp;<span>{{ FD_Trade.sum_weightAfterThresh.netWeight
-                                }}&nbsp;</span><span>T</span>
+                                }}&nbsp;</span><span>kg</span>
                             </div>
                         </div>
                     </template>
@@ -960,7 +996,7 @@ const getPersonAddressList = (queryString, cb) => {
                     </div>
                 </div>
             </template>
-            {{ FD_Trade }}
+
         </el-drawer>
     </el-card>
     <el-dialog v-model="SHOW_Settle" :title="TT_Settle" width="1200">
