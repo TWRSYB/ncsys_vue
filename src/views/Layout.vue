@@ -51,6 +51,31 @@ onMounted(() => {
 });
 
 
+// 系统设计菜单
+const sysMenuItems = [
+    { path: '/sys/UserManage', title: '用户列表', icon: 'SVG_User', allowedRoles: ['sysAdmin'] },
+    { path: '/sys/DbDesign', title: '数据库设计', icon: 'SVG_DataDesign', allowedRoles: ['sysAdmin'] }
+];
+
+// 粮食买卖菜单
+const grainMenuItems = [
+    { path: '/Grain/CornCobPurchase', title: '玉米棒收购', icon: 'SVG_CornCob_1', allowedRoles: ['sysAdmin', 'manager', 'operator'] },
+    { path: '/Grain/CornGrainPurchase', title: '玉米粒收购', icon: 'SVG_CornGrain_1', allowedRoles: ['sysAdmin', 'manager', 'operator'] },
+    { path: '/Grain/CornGrainSell', title: '玉米粒出售', icon: 'SVG_CornGrain_2', allowedRoles: ['sysAdmin', 'manager', 'operator'] },
+];
+
+// 农资交易菜单
+const nongziMenuItems = [
+    { path: '/Nongzi/NongziStock', title: '农资进货', icon: 'SVG_NongziStock', allowedRoles: ['sysAdmin', 'manager', 'operator'] },
+    { path: '/Nongzi/NongziSell', title: '农资销售', icon: 'SVG_NongziSell', allowedRoles: ['sysAdmin', 'manager', 'operator'] },
+]
+
+// 数据维护菜单
+const dataMaintainMenuItems = [
+    { path: '/Person/PersonInfo', title: '人员信息', icon: 'SVG_PersonInfo', allowedRoles: ['sysAdmin', 'manager'] },
+    { path: '/Person/WorkerInfo', title: '工人信息', icon: 'SVG_WorkerManage', allowedRoles: ['sysAdmin', 'manager'] },
+]
+
 </script>
 
 <template>
@@ -71,115 +96,85 @@ onMounted(() => {
             <el-menu :default-active="router.currentRoute.value.path" class="el-menu-vertical-demo"
                 :collapse="isCollapse" router>
 
-
-                <el-sub-menu index="1">
+                <el-sub-menu v-if="['sysAdmin'].includes(userInfoStore.info.roleCode)" index="1">
                     <template #title>
                         <el-icon>
                             <Platform />
                         </el-icon>
                         <span>系统设计</span>
                     </template>
-                    <el-menu-item index="/sys/UserManage">
-                        <el-icon>
-                            <SVG_User />
-                        </el-icon>
-                        <span>用户列表</span>
-                    </el-menu-item>
-                    <el-menu-item index="/sys/DbDesign">
-                        <el-icon>
-                            <SVG_DataDesign />
-                        </el-icon>
-                        <span>数据库表设计</span>
-                    </el-menu-item>
-                    <!-- <el-menu-item-group title="功能分组1">
-                        <template #title><span>系统设计</span></template>
-                    </el-menu-item-group>
-                    <el-menu-item-group title="功能分组2">
-                        <el-menu-item index="1-3">item three</el-menu-item>
-                    </el-menu-item-group>
-                    <el-sub-menu index="1-4">
-                        <template #title><span>item four</span></template>
-                        <el-menu-item index="1-4-1">item one</el-menu-item>
-                    </el-sub-menu> -->
+                    <template v-for="menu in sysMenuItems" :key="menu.path">
+                        <el-menu-item :index="menu.path" v-if="menu.allowedRoles.includes(userInfoStore.info.roleCode)">
+                            <el-icon>
+                                <component :is="menu.icon" />
+                            </el-icon>
+                            <span>{{ menu.title }}</span>
+                        </el-menu-item>
+                    </template>
                 </el-sub-menu>
 
-                <el-sub-menu index="2">
+                <el-sub-menu v-if="['sysAdmin', 'manager', 'operator'].includes(userInfoStore.info.roleCode)" index="2">
                     <template #title>
                         <el-icon>
                             <SVG_GrainTrade />
                         </el-icon>
                         <span>粮食买卖</span>
                     </template>
-                    <el-menu-item index="/Grain/CornCobPurchase">
-                        <el-icon>
-                            <SVG_CornCob_1 />
-                        </el-icon>
-                        <span>玉米棒收购</span>
-                    </el-menu-item>
-                    <el-menu-item index="/Grain/CornGrainPurchase">
-                        <el-icon>
-                            <SVG_CornGrain_1 />
-                        </el-icon>
-                        <span>玉米粒收购</span>
-                    </el-menu-item>
-                    <el-menu-item index="/Grain/CornGrainSell">
-                        <el-icon>
-                            <SVG_CornGrain_2 />
-                        </el-icon>
-                        <span>玉米粒出售</span>
-                    </el-menu-item>
+                    <template v-for="menu in grainMenuItems" :key="menu.path">
+                        <el-menu-item :index="menu.path" v-if="menu.allowedRoles.includes(userInfoStore.info.roleCode)">
+                            <el-icon>
+                                <component :is="menu.icon" />
+                            </el-icon>
+                            <span>{{ menu.title }}</span>
+                        </el-menu-item>
+                    </template>
                 </el-sub-menu>
-                <el-sub-menu index="3">
+
+                <el-sub-menu v-if="['sysAdmin', 'manager', 'operator'].includes(userInfoStore.info.roleCode)" index="3">
                     <template #title>
                         <el-icon>
                             <SVG_NongziTrade />
                         </el-icon>
                         <span>农资交易</span>
                     </template>
-                    <el-menu-item index="/Nongzi/NongziStock">
-                        <el-icon>
-                            <SVG_NongziStock />
-                        </el-icon>
-                        <span>农资进货</span>
-                    </el-menu-item>
-                    <el-menu-item index="/Nongzi/NongziSell">
-                        <el-icon>
-                            <SVG_NongziSell />
-                        </el-icon>
-                        <span>农资销售</span>
-                    </el-menu-item>
+                    <template v-for="menu in nongziMenuItems" :key="menu.path">
+                        <el-menu-item :index="menu.path" v-if="menu.allowedRoles.includes(userInfoStore.info.roleCode)">
+                            <el-icon>
+                                <component :is="menu.icon" />
+                            </el-icon>
+                            <span>{{ menu.title }}</span>
+                        </el-menu-item>
+                    </template>
                 </el-sub-menu>
-                <el-menu-item index="/Worker/WorkerAttendance">
+                <el-menu-item v-if="['sysAdmin', 'manager'].includes(userInfoStore.info.roleCode)"
+                    index="/Worker/WorkerAttendance">
                     <el-icon>
                         <SVG_Attendance />
                     </el-icon>
                     <template #title>工人出工</template>
                 </el-menu-item>
-                <el-menu-item index="5" disabled>
+                <el-menu-item v-if="['sysAdmin', 'manager', 'operator'].includes(userInfoStore.info.roleCode)" index="5"
+                    disabled>
                     <el-icon>
                         <SVG_Farm />
                     </el-icon>
                     <template #title>耕种</template>
                 </el-menu-item>
-                <el-sub-menu index="6">
+                <el-sub-menu v-if="['sysAdmin', 'manager'].includes(userInfoStore.info.roleCode)" index="6">
                     <template #title>
                         <el-icon>
                             <SVG_MainData />
                         </el-icon>
                         <span>信息维护</span>
                     </template>
-                    <el-menu-item index="/Person/PersonInfo">
-                        <el-icon>
-                            <SVG_PersonInfo />
-                        </el-icon>
-                        <template #title>人员信息</template>
-                    </el-menu-item>
-                    <el-menu-item index="/Person/WorkerInfo">
-                        <el-icon>
-                            <SVG_WorkerManage />
-                        </el-icon>
-                        <template #title>工人信息</template>
-                    </el-menu-item>
+                    <template v-for="menu in dataMaintainMenuItems" :key="menu.path">
+                        <el-menu-item :index="menu.path" v-if="menu.allowedRoles.includes(userInfoStore.info.roleCode)">
+                            <el-icon>
+                                <component :is="menu.icon" />
+                            </el-icon>
+                            <span>{{ menu.title }}</span>
+                        </el-menu-item>
+                    </template>
                 </el-sub-menu>
 
             </el-menu>
