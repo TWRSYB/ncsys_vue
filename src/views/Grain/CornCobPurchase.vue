@@ -303,6 +303,8 @@ const calculateTrade1 = (list, sum) => {
                     sum.tareWeight = sum.tareWeight + Number(row.tareWeight)
                     sum.netWeight = sum.netWeight + Number(row.netWeight)
                 }
+            } else {
+                row.netWeight = ''
             }
         });
     }
@@ -314,7 +316,7 @@ const SBM_saveTrade = () => {
     FORM_Trade.value.validateField(['tradeDate', 'sellerInfo.phoneNum', 'sellerInfo.personName', 'grossWeight'], (valid, fields) => {
         if (!valid) {
             // 表单校验不通过
-            ElMessage.warning('录入必要的信息后才能保存');
+            ElMessage.warning('录入和检查必要的信息后再保存');
             return false;
         }
 
@@ -646,22 +648,22 @@ const ACT_deleteTrade = (trade) => {
         <el-form inline ref="FORM_Search" :model="QUERY_Main.params" label-width="100px" class="search-form">
 
             <el-form-item label="交易日期" prop="tradeDate">
-                <el-date-picker v-model="QUERY_Main.params.tradeDate" placeholder="选择日期" value-format="YYYY-MM-DD" />
+                <el-date-picker v-model="QUERY_Main.params.tradeDate" value-format="YYYY-MM-DD" />
             </el-form-item>
 
 
             <el-form-item label="出售人" prop="seller">
-                <el-input v-model="QUERY_Main.params.seller" placeholder="输入姓名或手机号"></el-input>
+                <el-input v-model="QUERY_Main.params.seller"></el-input>
             </el-form-item>
 
             <el-form-item label="交易状态" prop="tradeStatus">
-                <el-select placeholder="请选择" v-model="QUERY_Main.params.tradeStatus" clearable>
+                <el-select v-model="QUERY_Main.params.tradeStatus" clearable>
                     <el-option v-for="(item) in OPT_tradeStatus" :key="item" :label="item" :value="item"></el-option>
                 </el-select>
             </el-form-item>
 
             <el-form-item label="是否脱粒" prop="threshingYn">
-                <el-select placeholder="请选择" v-model="QUERY_Main.params.threshingYn" clearable>
+                <el-select v-model="QUERY_Main.params.threshingYn" clearable>
                     <el-option v-for="(value, key) in OPT_YN" :key="key" :label="value" :value="key"></el-option>
                 </el-select>
             </el-form-item>
@@ -718,7 +720,7 @@ const ACT_deleteTrade = (trade) => {
                 :disabled="TT_Drawer == '交易详情'">
                 <el-row>
                     <el-form-item label="交易日期" prop="tradeDate" v-inline-flex>
-                        <el-date-picker v-model="FD_Trade.tradeDate" placeholder="交易日期" value-format="YYYY-MM-DD">
+                        <el-date-picker v-model="FD_Trade.tradeDate" value-format="YYYY-MM-DD">
                         </el-date-picker>
                     </el-form-item>
                     <el-form-item label="是否脱粒" prop="threshingYn" v-inline-flex>
@@ -729,7 +731,7 @@ const ACT_deleteTrade = (trade) => {
                         </el-radio-group>
                     </el-form-item>
                     <el-form-item label="结算方式" prop="clearingForm" v-inline-flex>
-                        <el-radio-group placeholder="请选择" v-model="FD_Trade.clearingForm">
+                        <el-radio-group v-model="FD_Trade.clearingForm">
                             <el-radio-button v-for="(value, index) in OPT_clearingForm" :value="value" :key="value">
                                 {{ value }}
                             </el-radio-button>
@@ -737,8 +739,7 @@ const ACT_deleteTrade = (trade) => {
                     </el-form-item>
                     <el-form-item label="计划结算日期" prop="planClearingDate" v-inline-flex
                         v-if="FD_Trade.clearingForm == '延结'">
-                        <el-date-picker v-model="FD_Trade.planClearingDate" placeholder="选择日期"
-                            value-format="YYYY-MM-DD">
+                        <el-date-picker v-model="FD_Trade.planClearingDate" value-format="YYYY-MM-DD">
                         </el-date-picker>
                     </el-form-item>
                 </el-row>
@@ -747,31 +748,31 @@ const ACT_deleteTrade = (trade) => {
 
                 <el-row>
                     <el-form-item label="单价" prop="unitPrice" v-inline-flex>
-                        <el-input v-model="FD_Trade.unitPrice" placeholder="单价" v-input-double @paste.prevent>
+                        <el-input v-model="FD_Trade.unitPrice" v-input-double @paste.prevent>
                             <template #append>元/斤</template>
                         </el-input>
                     </el-form-item>
                     <el-form-item label="霉菌率" prop="qualityMouldRate" v-inline-flex>
-                        <el-input v-model="FD_Trade.qualityMouldRate" placeholder="霉菌率"></el-input>
+                        <el-input v-model="FD_Trade.qualityMouldRate"></el-input>
                     </el-form-item>
                     <el-form-item label="湿度" prop="qualityHumidity" v-inline-flex>
-                        <el-input v-model="FD_Trade.qualityHumidity" placeholder="湿度"></el-input>
+                        <el-input v-model="FD_Trade.qualityHumidity"></el-input>
                     </el-form-item>
                 </el-row>
 
                 <el-row v-if="TT_Drawer === '交易详情'">
                     <el-form-item label="总重量" prop="totalWeight" v-inline-flex>
-                        <el-input v-model="FD_Trade.totalWeight" placeholder="总重量" v-input-double disabled>
+                        <el-input v-model="FD_Trade.totalWeight" v-input-double disabled>
                             <template #append>kg</template>
                         </el-input>
                     </el-form-item>
                     <el-form-item label="总价" prop="totalPrice" v-inline-flex>
-                        <el-input v-model="FD_Trade.totalPrice" placeholder="总价" v-input-double disabled>
+                        <el-input v-model="FD_Trade.totalPrice" v-input-double disabled>
                             <template #append>元</template>
                         </el-input>
                     </el-form-item>
                     <el-form-item label="交易状态" prop="tradeStatus" v-inline-flex>
-                        <el-select placeholder="请选择" v-model="FD_Trade.tradeStatus" clearable>
+                        <el-select v-model="FD_Trade.tradeStatus" clearable>
                             <el-option v-for="(item) in OPT_tradeStatus" :key="item" :label="item"
                                 :value="item"></el-option>
                         </el-select>
@@ -779,12 +780,11 @@ const ACT_deleteTrade = (trade) => {
                 </el-row>
                 <el-row v-if="TT_Drawer === '交易详情'">
                     <el-form-item label="实际结算日期" prop="actualClearingDate" v-inline-flex>
-                        <el-date-picker v-model="FD_Trade.actualClearingDate" placeholder="选择日期"
-                            value-format="YYYY-MM-DD">
+                        <el-date-picker v-model="FD_Trade.actualClearingDate" value-format="YYYY-MM-DD">
                         </el-date-picker>
                     </el-form-item>
                     <el-form-item label="补价" prop="premium" v-inline-flex>
-                        <el-input v-model="FD_Trade.premium" placeholder="补价" v-input-double @paste.prevent>
+                        <el-input v-model="FD_Trade.premium" v-input-double @paste.prevent>
                             <template #append>元</template>
                         </el-input>
                     </el-form-item>
@@ -796,18 +796,18 @@ const ACT_deleteTrade = (trade) => {
 
 
                 <el-form-item label="备注" prop="remark">
-                    <el-input v-model="FD_Trade.remark" type="textarea" placeholder="备注" autosize></el-input>
+                    <el-input v-model="FD_Trade.remark" type="textarea" autosize></el-input>
                 </el-form-item>
 
                 <el-divider content-position="left" style="margin-top: 70px;">出售人</el-divider>
 
                 <!-- <el-form-item label="手机号" prop="sellerInfo.phoneNum" style="width: 25%;display: inline-flex;">
-                    <el-input v-model="FD_Trade.sellerInfo.phoneNum" placeholder="手机号" v-input-int></el-input>
+                    <el-input v-model="FD_Trade.sellerInfo.phoneNum" v-input-int></el-input>
                 </el-form-item> -->
                 <el-form-item label="手机号" prop="sellerInfo.phoneNum" v-inline-flex>
                     <el-autocomplete v-model="FD_Trade.sellerInfo.phoneNum"
                         :fetch-suggestions="(queryString, cb) => getPersonLike(queryString, cb, 'phoneNum')"
-                        placeholder="手机号" @select="handleSelectPerson" :trigger-on-focus="false" :hide-loading="true">
+                        @select="handleSelectPerson" :trigger-on-focus="false" :hide-loading="true">
                         <template #default="{ item }">
                             <div style="display: flex; width: 500px;">
                                 <div style="width: 200px;">{{ item.phoneNum }}</div>
@@ -817,12 +817,12 @@ const ACT_deleteTrade = (trade) => {
                     </el-autocomplete>
                 </el-form-item>
                 <!-- <el-form-item label="姓名" prop="sellerInfo.personName" style="width: 25%;display: inline-flex;">
-                    <el-input v-model="FD_Trade.sellerInfo.personName" placeholder="姓名"></el-input>
+                    <el-input v-model="FD_Trade.sellerInfo.personName"></el-input>
                 </el-form-item> -->
                 <el-form-item label="姓名" prop="sellerInfo.personName" v-inline-flex>
                     <el-autocomplete v-model="FD_Trade.sellerInfo.personName" placement="bottom-end"
                         :fetch-suggestions="(queryString, cb) => getPersonLike(queryString, cb, 'personName')"
-                        placeholder="姓名" @select="handleSelectPerson" :trigger-on-focus="false" :hide-loading="true">
+                        @select="handleSelectPerson" :trigger-on-focus="false" :hide-loading="true">
                         <template #default="{ item }">
                             <div style="display: flex; width: 500px;">
                                 <div style="width: 200px;">{{ item.phoneNum }}</div>
@@ -832,11 +832,11 @@ const ACT_deleteTrade = (trade) => {
                     </el-autocomplete>
                 </el-form-item>
                 <!-- <el-form-item label="地址" prop="address" style="width: 40%;display: inline-flex;">
-                    <el-input v-model="FD_Trade.address" placeholder="地址"></el-input>
+                    <el-input v-model="FD_Trade.address"></el-input>
                 </el-form-item> -->
                 <el-form-item label="地址" prop="address" v-inline-flex="50">
                     <el-autocomplete v-model="FD_Trade.address" placement="bottom-end"
-                        :fetch-suggestions="getPersonAddressList" placeholder="地址">
+                        :fetch-suggestions="getPersonAddressList">
                     </el-autocomplete>
                 </el-form-item>
 
@@ -869,22 +869,20 @@ const ACT_deleteTrade = (trade) => {
                         </el-table-column>
                         <el-table-column label="车牌号" prop="verhicleNum">
                             <template #default="{ row }">
-                                <el-input v-model="row.verhicleNum" placeholder="请输入车牌号" />
+                                <el-input v-model="row.verhicleNum" />
                             </template>
                         </el-table-column>
                         <el-table-column label="毛重(kg)" prop="grossWeight">
                             <template #default="{ row }">
                                 <el-form-item prop="grossWeight" :rules="$VLD.VIT_required(row.grossWeight)">
-                                    <el-input v-model="row.grossWeight" placeholder="请输入毛重" v-input-int="1"
-                                        @change="calculateTrade" />
+                                    <el-input v-model="row.grossWeight" v-input-int="1" @change="calculateTrade" />
                                 </el-form-item>
                             </template>
                         </el-table-column>
                         <el-table-column label="皮重(kg)" prop="tareWeight">
                             <template #default="{ row }">
                                 <el-form-item prop="tareWeight" :rules="$VLD.VIT_required(row.tareWeight)">
-                                    <el-input v-model="row.tareWeight" placeholder="请输入皮重" v-input-int
-                                        @change="calculateTrade" />
+                                    <el-input v-model="row.tareWeight" v-input-int @change="calculateTrade" />
                                 </el-form-item>
                             </template>
                         </el-table-column>
@@ -897,7 +895,7 @@ const ACT_deleteTrade = (trade) => {
                         </el-table-column>
                         <el-table-column label="备注" prop="remark">
                             <template #default="{ row }">
-                                <el-input v-model="row.remark" placeholder="请输入备注" autosize type="textarea"></el-input>
+                                <el-input v-model="row.remark" autosize type="textarea"></el-input>
                             </template>
                         </el-table-column>
                     </el-table>
@@ -931,22 +929,20 @@ const ACT_deleteTrade = (trade) => {
                         <el-table-column type="index" width="60" />
                         <el-table-column label="车牌号" prop="verhicleNum">
                             <template #default="{ row }">
-                                <el-input v-model="row.verhicleNum" placeholder="请输入车牌号" />
+                                <el-input v-model="row.verhicleNum" />
                             </template>
                         </el-table-column>
                         <el-table-column label="毛重(kg)" prop="grossWeight">
                             <template #default="{ row }">
                                 <el-form-item prop="grossWeight" :rules="$VLD.VIT_required(row.grossWeight)">
-                                    <el-input v-model="row.grossWeight" placeholder="请输入毛重" @change="calculateTrade"
-                                        v-input-int="1" />
+                                    <el-input v-model="row.grossWeight" @change="calculateTrade" v-input-int="1" />
                                 </el-form-item>
                             </template>
                         </el-table-column>
                         <el-table-column label="皮重(kg)" prop="tareWeight">
                             <template #default="{ row }">
                                 <el-form-item prop="tareWeight" :rules="$VLD.VIT_required(row.tareWeight)">
-                                    <el-input v-model="row.tareWeight" placeholder="请输入皮重" @change="calculateTrade"
-                                        v-input-int />
+                                    <el-input v-model="row.tareWeight" @change="calculateTrade" v-input-int />
                                 </el-form-item>
                             </template>
                         </el-table-column>
@@ -959,7 +955,7 @@ const ACT_deleteTrade = (trade) => {
                         </el-table-column>
                         <el-table-column label="备注" prop="remark">
                             <template #default="{ row }">
-                                <el-input v-model="row.remark" placeholder="请输入备注" autosize type="textarea"></el-input>
+                                <el-input v-model="row.remark" autosize type="textarea"></el-input>
                             </template>
                         </el-table-column>
                     </el-table>
@@ -968,14 +964,17 @@ const ACT_deleteTrade = (trade) => {
                             v-if="FD_Trade.sum_weightAfterThresh">
                             <span>合计</span>
                             <div>
-                                <span>毛重:</span>&nbsp;<span>{{ FD_Trade.sum_weightAfterThresh.grossWeight
-                                }}&nbsp;</span><span>kg</span>
+                                <span>毛重:</span>&nbsp;
+                                <span>{{ FD_Trade.sum_weightAfterThresh.grossWeight }}</span>&nbsp;
+                                <span>kg</span>
                                 &nbsp;&nbsp;&nbsp;
-                                <span>皮重:</span>&nbsp;<span>{{ FD_Trade.sum_weightAfterThresh.tareWeight
-                                }}&nbsp;</span><span>kg</span>
+                                <span>皮重:</span>&nbsp;
+                                <span>{{ FD_Trade.sum_weightAfterThresh.tareWeight }}</span>&nbsp;
+                                <span>kg</span>
                                 &nbsp;&nbsp;&nbsp;
-                                <span>净重:</span>&nbsp;<span>{{ FD_Trade.sum_weightAfterThresh.netWeight
-                                }}&nbsp;</span><span>kg</span>
+                                <span>净重:</span>&nbsp;
+                                <span>{{ FD_Trade.sum_weightAfterThresh.netWeight }}</span>&nbsp;
+                                <span>kg</span>
                             </div>
                         </div>
                     </template>
@@ -991,8 +990,9 @@ const ACT_deleteTrade = (trade) => {
                         <span>总价:</span>&nbsp;<span>{{ calculateTrade2.totalPrice }}&nbsp;</span><span>元</span>
                     </div>
                     <div>
-                        <el-button type="primary" @click="SBM_saveTrade">保存</el-button>
-                        <el-button type="primary" @click="SBM_purchaseComplete">收购完成</el-button>
+                        <el-button type="primary" @click="SBM_saveTrade" v-if="TT_Drawer != '交易详情'">保存</el-button>
+                        <el-button type="primary" @click="SBM_purchaseComplete"
+                            v-if="TT_Drawer != '交易详情'">收购完成</el-button>
                     </div>
                 </div>
             </template>
@@ -1008,12 +1008,12 @@ const ACT_deleteTrade = (trade) => {
                 </el-form-item>
                 <!-- 总重 -->
                 <el-form-item label="总重" prop="totalWeight" v-inline-flex>
-                    <el-input v-model="FD_Settle.totalWeight" placeholder="请输入总重" disabled>
+                    <el-input v-model="FD_Settle.totalWeight" disabled>
                         <template #append>kg</template>
                     </el-input>
                 </el-form-item>
                 <el-form-item label="总价" prop="totalPrice" v-inline-flex>
-                    <el-input v-model="FD_Settle.totalPrice" placeholder="请输入总价" disabled>
+                    <el-input v-model="FD_Settle.totalPrice" disabled>
                         <template #append>元</template>
                     </el-input>
                 </el-form-item>
@@ -1027,18 +1027,17 @@ const ACT_deleteTrade = (trade) => {
 
             <el-row>
                 <el-form-item label="实际结算日期" prop="actualClearingDate" v-inline-flex>
-                    <el-date-picker v-model="FD_Settle.actualClearingDate" placeholder="选择日期"
-                        value-format="YYYY-MM-DD"></el-date-picker>
+                    <el-date-picker v-model="FD_Settle.actualClearingDate" value-format="YYYY-MM-DD"></el-date-picker>
                 </el-form-item>
                 <el-form-item label="补价" prop="premium" v-inline-flex>
-                    <el-input v-model="FD_Settle.premium" placeholder="请输入补价" v-input-double="3">
+                    <el-input v-model="FD_Settle.premium" v-input-double="3">
                         <template #append>元</template>
                     </el-input>
                 </el-form-item>
             </el-row>
 
             <el-form-item label="备注" prop="remark">
-                <el-input v-model="FD_Settle.remark" type="textarea" placeholder="请输入备注内容"></el-input>
+                <el-input v-model="FD_Settle.remark" type="textarea"></el-input>
             </el-form-item>
         </el-form>
         <template #footer>

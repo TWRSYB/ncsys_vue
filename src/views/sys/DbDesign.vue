@@ -1,5 +1,8 @@
 <script setup>
 
+import { useUserInfoStore } from '@/stores/userInfo';
+const userInfoStore = useUserInfoStore()
+
 const TDS_TableDesign = ref([])
 const TDS_TableDesignColumn = ref([])
 const TDS_TableDesignSql = ref([])
@@ -54,27 +57,83 @@ onMounted(() => {
     ACT_getTableDesignList();
 })
 
-// 过滤表设计
-const Fielded_TDS_TableDesign = computed(() => {
-    return TDS_TableDesign.value.filter(field => !['createUser', 'createTime', 'updateUser', 'updateTime'].includes(field.columnName))
+const DEALED_TDS_TableDesign = computed(() => {
+    // 插入补充字段
+    const newTDS = TDS_TableDesign.value.concat([
+        {
+            columnName: 'sellerName',
+            columnComment: '出售人',
+            type: 'text'
+        }
+    ])
+
+    // 字段排序
+    const orderedFields = ['tableId', 'tableName', 'tableComment', 'tableType',
+        'dataStatus', 'createUser', 'createTime', 'updateUser', 'updateTime']
+    // 根据用户角色过滤禁用字段
+    let disabledFields = orderedFields
+    // 允许的字段
+    let allowedFields = []
+    if (userInfoStore.info.roleCode == 'sysAdmin') { // 系统管理员
+        disabledFields = []
+    }
+    allowedFields = orderedFields.filter(item => !new Set(disabledFields).has(item))
+    // 按照顺序过滤表设计
+    return newTDS.filter(field => allowedFields.includes(field.columnName))
+        .sort((a, b) => {
+            return allowedFields.indexOf(a.columnName) - allowedFields.indexOf(b.columnName)
+        })
 })
 
 
+const SHOW_fieldFilter = ref(false) // 控制字段过滤器显示状态
+const FLD_field = ref(['tableName', 'tableComment', 'tableType', 'dataStatus'])
+
+// 过滤表设计
+const FLDTDS_TableDesign = computed(() => {
+    return DEALED_TDS_TableDesign.value.filter(field => FLD_field.value.includes(field.columnName))
+})
 
 const ACT_getTableDesignList = () => {
 
     // 获取表设计列表
-    $Requests.get('/tableDesign/getTableDesignList')
+    $Requests.post('/tableDesign/getTableDesignList', QUERY_Main.value)
         .then((response) => {
             if (response.code === 200) {
-                list_tableDesign.value = response.data;
+                TD_List.value = response.list;
+                QUERY_Main.value.total = response.total;
             }
         })
 }
 
 
+const FORM_Search = ref(null)
 
-const list_tableDesign = ref([])
+// 列表
+const TD_List = ref([])
+const QUERY_Main = ref({
+    query: {
+    },
+    params: {
+        tableLike: '',
+        tableType: '',
+        dataStatus: '',
+    },
+    pageNum: 1,
+    pageSize: 10,
+    sortField: '',
+    sortOrder: '',
+    total: 0
+})
+
+
+const OPT_dataStatus = computed(() => {
+    try {
+        return TDS_TableDesign.value.filter(item => item.columnName === 'dataStatus')[0].lvs
+    } catch (error) {
+        return []
+    }
+});
 
 
 
@@ -697,19 +756,60 @@ const VIT_notExist = () => {
     <el-card class="page-container">
         <template #header>
             <div class="header">
-                <span>数据库管理</span>
+                <div class="title">
+                    <div> 数据库管理 </div>
+                    <el-icon class="field-filter-icon" @click.stop="SHOW_fieldFilter = !SHOW_fieldFilter"
+                        v-if="['sysAdmin', 'manager'].includes(userInfoStore.info.roleCode)">
+                        <SVG_Table />
+                    </el-icon>
+                </div>
                 <div class="extra">
-                    <el-button type="primary" @click="ACT_getTableDesignList">刷新</el-button>
+                    <!-- <el-button type="primary" @click="ACT_getTableDesignList">刷新</el-button> -->
                     <el-button type="primary" @click="ACT_addTable">新增表</el-button>
                     <el-button type="primary" @click="ACT_generateTD">从现有表生成表设计</el-button>
                 </div>
             </div>
+            <div class="field-filter" v-if="SHOW_fieldFilter" v-click-outside="() => SHOW_fieldFilter = false">
+                <el-checkbox-group v-model="FLD_field" style="display: flex; flex-wrap: wrap;">
+                    <el-checkbox-button v-for="(field, index) in TDS_TableDesign" :key="index"
+                        :value="field.columnName">
+                        {{ field.columnComment }}
+                    </el-checkbox-button>
+                </el-checkbox-group>
+            </div>
         </template>
         <!-- show-overflow-tooltip -->
-        <el-table :data="list_tableDesign" border style="width: 100%">
+
+        <!-- 搜索表单 -->
+        <el-form inline ref="FORM_Search" :model="QUERY_Main.params" label-width="100px" class="search-form">
+
+            <el-form-item label="表名" prop="tableLike">
+                <el-input v-model="QUERY_Main.params.tableLike" placeholder="请输入关键字"></el-input>
+            </el-form-item>
+
+            <el-form-item label="表分类" prop="tableType">
+                <el-select placeholder="请选择" v-model="QUERY_Main.params.tableType" clearable>
+                    <el-option v-for="(value, key) in OPT_tableType" :key="key" :label="value" :value="key"></el-option>
+                </el-select>
+            </el-form-item>
+
+            <el-form-item label="表状态" prop="dataStatus">
+                <el-select placeholder="请选择" v-model="QUERY_Main.params.dataStatus" clearable>
+                    <el-option v-for="(value, key) in OPT_dataStatus" :key="key" :label="value"
+                        :value="key"></el-option>
+                </el-select>
+            </el-form-item>
+
+            <el-form-item class="search-btn">
+                <el-button type="primary" @click="ACT_getTableDesignList">搜索</el-button>
+                <el-button @click="FORM_Search.resetFields()">重置</el-button>
+            </el-form-item>
+        </el-form>
+
+        <el-table :data="TD_List" border style="width: 100%">
             <el-table-column width="55px" label="序号" type="index"> </el-table-column>
-            <el-table-column v-for="field in Fielded_TDS_TableDesign" :key="field.columnName"
-                :label="field.columnComment" :prop="field.columnName">
+            <el-table-column v-for="field in FLDTDS_TableDesign" :key="field.columnName" :label="field.columnComment"
+                :prop="field.columnName">
                 <template #default="{ row }" v-if="field.type == 'lv'">
                     {{ field.lvs[row[field.columnName]] }}
                 </template>
@@ -732,7 +832,11 @@ const VIT_notExist = () => {
                 <el-empty description="没有数据" />
             </template>
         </el-table>
-        {{ TDS_TableDesign }}
+
+        <!-- 分页条 -->
+        <el-pagination v-model:current-page="QUERY_Main.pageNum" v-model:page-size="QUERY_Main.pageSize"
+            :total="QUERY_Main.total" :page-sizes="[10, 20, 50, 100]" @change="ACT_getTableDesignList"
+            layout="jumper, total, sizes, prev, pager, next" />
 
         <!-- 抽屉 -->
         <el-drawer v-model="SHOW_Drawer" :title="title_Drawer" direction="rtl" size="90%">

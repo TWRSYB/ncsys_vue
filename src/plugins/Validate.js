@@ -97,7 +97,7 @@ class Validate {
                     return;
                 }
 
-                if (!param && !param===0) {
+                if (!param && param !== 0) {
                     callback(new Error());
                 } else {
                     callback();
