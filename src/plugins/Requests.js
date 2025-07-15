@@ -1,6 +1,5 @@
 import axios from 'axios'
-import { useTokenStore } from '@/stores/token'
-import { useUserInfoStore } from '@/stores/userInfo'
+import { useLoginUserStore } from '@/stores/loginUser'
 import router from '@/router' // 导入路由实例
 
 class Request {
@@ -13,14 +12,14 @@ class Request {
         this.instance.interceptors.request.use(
             (config) => {
 
-                const tokenStore = useTokenStore();
+                const loginUserStore = useLoginUserStore();
 
                 if (!['/user/login', '/user/logout'].includes(config.url)) {
-                    tokenStore.checkToken(); // 检查token是否需要刷新
+                    loginUserStore.checkToken(); // 检查token是否需要刷新
                 }
 
                 // 添加token到headers
-                const token = tokenStore.token
+                const token = loginUserStore.loginUser.token
                 if (token) {
                     config.headers.Authorization = token
                 }
@@ -69,8 +68,8 @@ class Request {
 
                 if (error.response && error.response.status === 401) {
                     ElMessage.error('请先登录')
-                    const tokenStore = useTokenStore();
-                    tokenStore.removeToken() // 清除token
+                    const loginUserStore = useLoginUserStore();
+                    loginUserStore.removeToken() // 清除token
                     router.push('/login') // 跳转到登录页
                 } else {
                     // 统一错误处理
@@ -123,10 +122,8 @@ class Request {
         setTimeout(() => {
             // 跳转到登录页
             router.push('/login');
-            const userInfoStore = useUserInfoStore();
-            userInfoStore.removeInfo();// 清除用户信息
-            const tokenStore = useTokenStore();
-            tokenStore.removeToken() // 清除token
+            const loginUserStore = useLoginUserStore();
+            loginUserStore.removeToken() // 清除token
         }, 50);
     }
 

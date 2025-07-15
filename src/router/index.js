@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { useTokenStore } from "@/stores/token"; // 引入 Pinia store
-import { useUserInfoStore } from '@/stores/userInfo';
+import { useLoginUserStore } from "@/stores/loginUser";
 
 import CornGrainPurchaseVue from "@/views/Grain/CornGrainPurchase.vue"
 import CornGrainSellVue from "@/views/Grain/CornGrainSell.vue"
@@ -74,11 +73,12 @@ const routes = [
                 component: PersonInfoVue,
                 meta: { requiresAuth: true, roles: ['sysAdmin', 'manager'] },
             },
+            // 用户功能
             // 用户信息
             {
                 path: '/User/UserInfo',
                 component: () => import('@/views/User/UserInfo.vue'),
-                meta: { requiresAuth: true, roles: ['sysAdmin', 'manager', 'operator'] },
+                meta: { requiresAuth: true, roles: ['sysAdmin', 'manager'] },
             },
         ],
     },
@@ -93,14 +93,14 @@ router.beforeEach((to, from, next) => {
     // 检查是否需要认证
     if (to.matched.some(record => record.meta.requiresAuth)) {
         // 如果是需要认证的路由，检查用户是否已登录
-        const tokenStore = useTokenStore();
-        if (!tokenStore.token) {
+        const loginUserStore = useLoginUserStore();
+        if (!loginUserStore.loginUser.token) {
             // 如果没有token，重定向到登录页
             next({ path: '/login' });
         } else {
             // 检查用户角色是否满足当前路由的权限要求
             const requiredRoles = to.meta.roles;
-            const userRole = useUserInfoStore().info.roleCode;
+            const userRole = useLoginUserStore().loginUser.roleCode;
 
             if (!requiredRoles || requiredRoles.length === 0 || requiredRoles.includes(userRole)) {
                 // 用户角色符合要求，继续导航

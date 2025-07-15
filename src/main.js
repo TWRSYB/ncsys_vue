@@ -56,6 +56,7 @@ app.use(router) // 使用路由
 
 // 全局属性
 app.config.globalProperties.$Com = comUtils // 挂载 ComUtils 到全局属性
+app.config.globalProperties.$Requests = request // 挂载 request 到全局属性
 app.config.globalProperties.$VLD = validate // 挂载 validate 到全局属性
 
 

@@ -1,5 +1,5 @@
 <script setup>
-import { useTokenStore } from '@/stores/token';
+import { useLoginUserStore } from '@/stores/loginUser';
 
 const formData_login = ref({
     loginCode: '',
@@ -34,7 +34,7 @@ const login = () => {
         $Requests.post('/user/login', formData_login.value, { showSuccessMsg: true })
             .then(result => {
                 // 将token存储到pinia中
-                useTokenStore().setToken(result.data);
+                useLoginUserStore().setToken(result.data);
                 // 跳转首页
                 router.push('/')
             })

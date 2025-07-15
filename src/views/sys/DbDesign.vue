@@ -1,7 +1,7 @@
 <script setup>
 
-import { useUserInfoStore } from '@/stores/userInfo';
-const userInfoStore = useUserInfoStore()
+import { useLoginUserStore } from '@/stores/loginUser'
+const loginUserStore = useLoginUserStore()
 
 const TDS_TableDesign = ref([])
 const TDS_TableDesignColumn = ref([])
@@ -74,7 +74,7 @@ const DEALED_TDS_TableDesign = computed(() => {
     let disabledFields = orderedFields
     // 允许的字段
     let allowedFields = []
-    if (userInfoStore.info.roleCode == 'sysAdmin') { // 系统管理员
+    if (loginUserStore.loginUser.roleCode == 'sysAdmin') { // 系统管理员
         disabledFields = []
     }
     allowedFields = orderedFields.filter(item => !new Set(disabledFields).has(item))
@@ -759,7 +759,7 @@ const VIT_notExist = () => {
                 <div class="title">
                     <div> 数据库管理 </div>
                     <el-icon class="field-filter-icon" @click.stop="SHOW_fieldFilter = !SHOW_fieldFilter"
-                        v-if="['sysAdmin', 'manager'].includes(userInfoStore.info.roleCode)">
+                        v-if="['sysAdmin', 'manager'].includes(loginUserStore.loginUser.roleCode)">
                         <SVG_Table />
                     </el-icon>
                 </div>

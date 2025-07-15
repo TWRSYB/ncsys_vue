@@ -6,19 +6,19 @@ import { defineStore } from 'pinia'
 
     返回值: 函数
 */
-export const useTokenStore = defineStore('token', () => {
+export const useLoginUserStore = defineStore('loginUser', () => {
     //定义状态的内容
 
     //1.响应式变量
-    const token = ref('')
+    const loginUser = ref({})
     const expires = ref(0)
     const refreshing = ref(false) // 是否正在刷新token
     let Timer_expire = null // 定义一个变量来存储定时器
 
 
     //2.定义一个函数,修改token的值
-    const setToken = (newToken, expiresIn = 50 ) => {
-        token.value = newToken
+    const setToken = (newToken, expiresIn = 50) => {
+        loginUser.value = newToken
         expires.value = Date.now() + expiresIn * 60 * 1000;
         refreshing.value = false; // 重置刷新标志
 
@@ -34,28 +34,33 @@ export const useTokenStore = defineStore('token', () => {
 
     //3.函数,移除token的值
     const removeToken = () => {
-        token.value = ''
+        loginUser.value = {}
     }
 
     //4.函数,检查是否需要刷新token
     const needRefresh = () => {
-        return token.value && (expires.value - Date.now()) < 20 * 60 * 1000
+        return loginUser.value.token && (expires.value - Date.now()) < 20 * 60 * 1000
     }
 
     //5.函数,检查token是否需要刷新
     const checkToken = () => {
-        
+
         if (needRefresh() && !refreshing.value) {
             refreshing.value = true;
-            $Requests.get('/user/refreshToken')
-                .then(response => {
-                    setToken(response.data);
-                })
-        } 
+            refreshToken()
+        }
+    }
+
+    // 刷新token
+    const refreshToken = () => {
+        $Requests.get('/user/refreshToken')
+            .then(response => {
+                setToken(response.data);
+            })
     }
 
     return {
-        token, refreshing, setToken, removeToken, checkToken
+        loginUser, refreshing, setToken, removeToken, checkToken, refreshToken
     }
 }, {
     persist: true//持久化存储

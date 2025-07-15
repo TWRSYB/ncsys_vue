@@ -1,7 +1,6 @@
 <script setup>
-import avatar from '@/assets/default.png'
-import { useTokenStore } from '@/stores/token';
-import { useUserInfoStore } from '@/stores/userInfo';
+
+import { useLoginUserStore } from '@/stores/loginUser';
 
 const OPT_roleCode = ref({}) // 角色选项
 const INIT_getOPT = () => {
@@ -15,37 +14,19 @@ const INIT_getOPT = () => {
 }
 
 const router = useRouter();
-const userInfoStore = useUserInfoStore()
-const tokenStore = useTokenStore()
+const loginUserStore = useLoginUserStore()
 // 折叠导航栏
 const isCollapse = ref(false)
-// const handleOpen = (key, keyPath) => {
-//     console.log(key, keyPath)
-// }
-// const handleClose = (key, keyPath) => {
-//     console.log(key, keyPath)
-// }
+
 const ACT_logout = () => {
     $Requests.logout()
 }
 
 
 
-const ASK_getUserInfo = async () => {
-    // 获取用户信息
-    $Requests.get('/user/getUserInfo')
-        .then(res => {
-            if (res.code === 200) {
-                // 成功获取用户信息
-                userInfoStore.setInfo(res.data);
-            }
-        })
 
-}
 
 onMounted(() => {
-    // 页面加载时获取用户信息
-    ASK_getUserInfo();
     // 页面加载时获取选项
     INIT_getOPT();
 });
@@ -96,7 +77,7 @@ const dataMaintainMenuItems = [
             <el-menu :default-active="router.currentRoute.value.path" class="el-menu-vertical-demo"
                 :collapse="isCollapse" router>
 
-                <el-sub-menu v-if="['sysAdmin'].includes(userInfoStore.info.roleCode)" index="1">
+                <el-sub-menu v-if="['sysAdmin'].includes(loginUserStore.loginUser.roleCode)" index="1">
                     <template #title>
                         <el-icon>
                             <Platform />
@@ -104,7 +85,7 @@ const dataMaintainMenuItems = [
                         <span>系统设计</span>
                     </template>
                     <template v-for="menu in sysMenuItems" :key="menu.path">
-                        <el-menu-item :index="menu.path" v-if="menu.allowedRoles.includes(userInfoStore.info.roleCode)">
+                        <el-menu-item :index="menu.path" v-if="menu.allowedRoles.includes(loginUserStore.loginUser.roleCode)">
                             <el-icon>
                                 <component :is="menu.icon" />
                             </el-icon>
@@ -113,7 +94,7 @@ const dataMaintainMenuItems = [
                     </template>
                 </el-sub-menu>
 
-                <el-sub-menu v-if="['sysAdmin', 'manager', 'operator'].includes(userInfoStore.info.roleCode)" index="2">
+                <el-sub-menu v-if="['sysAdmin', 'manager', 'operator'].includes(loginUserStore.loginUser.roleCode)" index="2">
                     <template #title>
                         <el-icon>
                             <SVG_GrainTrade />
@@ -121,7 +102,7 @@ const dataMaintainMenuItems = [
                         <span>粮食买卖</span>
                     </template>
                     <template v-for="menu in grainMenuItems" :key="menu.path">
-                        <el-menu-item :index="menu.path" v-if="menu.allowedRoles.includes(userInfoStore.info.roleCode)">
+                        <el-menu-item :index="menu.path" v-if="menu.allowedRoles.includes(loginUserStore.loginUser.roleCode)">
                             <el-icon>
                                 <component :is="menu.icon" />
                             </el-icon>
@@ -130,7 +111,7 @@ const dataMaintainMenuItems = [
                     </template>
                 </el-sub-menu>
 
-                <el-sub-menu v-if="['sysAdmin', 'manager', 'operator'].includes(userInfoStore.info.roleCode)" index="3">
+                <el-sub-menu v-if="['sysAdmin', 'manager', 'operator'].includes(loginUserStore.loginUser.roleCode)" index="3">
                     <template #title>
                         <el-icon>
                             <SVG_NongziTrade />
@@ -138,7 +119,7 @@ const dataMaintainMenuItems = [
                         <span>农资交易</span>
                     </template>
                     <template v-for="menu in nongziMenuItems" :key="menu.path">
-                        <el-menu-item :index="menu.path" v-if="menu.allowedRoles.includes(userInfoStore.info.roleCode)">
+                        <el-menu-item :index="menu.path" v-if="menu.allowedRoles.includes(loginUserStore.loginUser.roleCode)">
                             <el-icon>
                                 <component :is="menu.icon" />
                             </el-icon>
@@ -146,21 +127,21 @@ const dataMaintainMenuItems = [
                         </el-menu-item>
                     </template>
                 </el-sub-menu>
-                <el-menu-item v-if="['sysAdmin', 'manager'].includes(userInfoStore.info.roleCode)"
+                <el-menu-item v-if="['sysAdmin', 'manager'].includes(loginUserStore.loginUser.roleCode)"
                     index="/Worker/WorkerAttendance">
                     <el-icon>
                         <SVG_Attendance />
                     </el-icon>
                     <template #title>工人出工</template>
                 </el-menu-item>
-                <el-menu-item v-if="['sysAdmin', 'manager', 'operator'].includes(userInfoStore.info.roleCode)" index="5"
+                <el-menu-item v-if="['sysAdmin', 'manager', 'operator'].includes(loginUserStore.loginUser.roleCode)" index="5"
                     disabled>
                     <el-icon>
                         <SVG_Farm />
                     </el-icon>
                     <template #title>耕种</template>
                 </el-menu-item>
-                <el-sub-menu v-if="['sysAdmin', 'manager'].includes(userInfoStore.info.roleCode)" index="6">
+                <el-sub-menu v-if="['sysAdmin', 'manager'].includes(loginUserStore.loginUser.roleCode)" index="6">
                     <template #title>
                         <el-icon>
                             <SVG_MainData />
@@ -168,7 +149,7 @@ const dataMaintainMenuItems = [
                         <span>信息维护</span>
                     </template>
                     <template v-for="menu in dataMaintainMenuItems" :key="menu.path">
-                        <el-menu-item :index="menu.path" v-if="menu.allowedRoles.includes(userInfoStore.info.roleCode)">
+                        <el-menu-item :index="menu.path" v-if="menu.allowedRoles.includes(loginUserStore.loginUser.roleCode)">
                             <el-icon>
                                 <component :is="menu.icon" />
                             </el-icon>
@@ -185,23 +166,24 @@ const dataMaintainMenuItems = [
         <el-container>
             <!-- 头部区域 -->
             <el-header>
-                <div>{{ OPT_roleCode[userInfoStore.info.roleCode] }}：<strong>{{ userInfoStore.info.userName }}</strong>
+                <div>{{ OPT_roleCode[loginUserStore.loginUser.roleCode] }}：<strong>{{ loginUserStore.loginUser.userName }}</strong>
                 </div>
                 <el-dropdown placement="bottom-end">
                     <span class="el-dropdown__box">
-                        <el-avatar :src="avatar" />
+                        <el-avatar :src="loginUserStore.loginUser.avatar" />
                         <el-icon>
                             <CaretBottom />
                         </el-icon>
                     </span>
                     <template #dropdown>
                         <el-dropdown-menu>
-                            <el-dropdown-item command="userInfo" icon="User"
-                                @click="router.push('/User/UserInfo')">基本资料</el-dropdown-item>
-                            <!-- <el-dropdown-item command="avatar" icon="Crop">更换头像</el-dropdown-item> -->
-                            <el-dropdown-item command="changePassword" icon="Lock">修改密码</el-dropdown-item>
-                            <el-dropdown-item command="logout" icon="SwitchButton"
-                                @click="ACT_logout">退出登录</el-dropdown-item>
+                            <el-dropdown-item command="userInfo" icon="User" @click="router.push('/User/UserInfo')"
+                                v-if="['sysAdmin', 'manager'].includes(loginUserStore.loginUser.roleCode)">
+                                用户信息
+                            </el-dropdown-item>
+                            <el-dropdown-item command="logout" icon="SwitchButton" @click="ACT_logout">
+                                退出登录
+                            </el-dropdown-item>
                         </el-dropdown-menu>
                     </template>
                 </el-dropdown>
@@ -211,8 +193,10 @@ const dataMaintainMenuItems = [
                 <router-view></router-view>
             </el-main>
             <!-- 底部区域 -->
-            <el-footer><span style="font-family: 'Font_xinshu';font-size: 20px;">祁县东城</span>&nbsp;&nbsp;©2025 Created by
-                黑牛程序员</el-footer>
+            <el-footer>
+                <span style="font-family: 'Font_xinshu';font-size: 20px;">祁县东城</span>
+                &nbsp;&nbsp;©2025 Created by 黑牛程序员
+            </el-footer>
         </el-container>
     </el-container>
 </template>

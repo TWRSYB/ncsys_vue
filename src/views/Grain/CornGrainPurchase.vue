@@ -1,7 +1,7 @@
 <script setup>
 
-import { useUserInfoStore } from '@/stores/userInfo';
-const userInfoStore = useUserInfoStore()
+import { useLoginUserStore } from '@/stores/loginUser'
+const loginUserStore = useLoginUserStore()
 
 
 
@@ -102,11 +102,11 @@ const DEALED_TDS_CornGrainPurchase = computed(() => {
     let disabledFields = orderedFields
     // 允许的字段
     let allowedFields = []
-    if (userInfoStore.info.roleCode == 'sysAdmin') { // 系统管理员
+    if (loginUserStore.loginUser.roleCode == 'sysAdmin') { // 系统管理员
         disabledFields = []
-    } else if (userInfoStore.info.roleCode == 'manager') { // 管理员
+    } else if (loginUserStore.loginUser.roleCode == 'manager') { // 管理员
         disabledFields = ['dataStatus']
-    } else if (userInfoStore.info.roleCode == 'operator') { // 操作员
+    } else if (loginUserStore.loginUser.roleCode == 'operator') { // 操作员
         disabledFields = ['sellerId', 'dataStatus', 'createUser', 'createTime', 'updateUser', 'updateTime']
     }
     allowedFields = orderedFields.filter(item => !new Set(disabledFields).has(item))
@@ -126,15 +126,15 @@ const FLD_field = ref(['tradeDate', 'sellerName', 'tradeStatus', 'clearingForm',
 
 // 过滤表设计
 const FLDTDS_CornGrainPurchase = computed(() => {
-    if (userInfoStore.info.roleCode == 'sysAdmin') {
+    if (loginUserStore.loginUser.roleCode == 'sysAdmin') {
         // 如果是系统管理员,则过滤掉敏感字段
         return DEALED_TDS_CornGrainPurchase.value.filter(field => FLD_field.value.includes(field.columnName))
     }
-    if (userInfoStore.info.roleCode == 'manager') {
+    if (loginUserStore.loginUser.roleCode == 'manager') {
         // 如果是管理员,则过滤掉敏感字段
         return DEALED_TDS_CornGrainPurchase.value.filter(field => FLD_field.value.includes(field.columnName))
     }
-    if (userInfoStore.info.roleCode == 'operator') {
+    if (loginUserStore.loginUser.roleCode == 'operator') {
         // 如果是操作人,则过滤掉敏感字段
         return DEALED_TDS_CornGrainPurchase.value.filter(field => FLD_field.value.includes(field.columnName))
     }
@@ -315,7 +315,7 @@ const SBM_saveTrade = () => {
                 if (response.code === 200) {
                     SHOW_Drawer.value = false;
                     ACT_GetList();
-                } else if (response.code === 555 && ['manager'].includes(userInfoStore.info.roleCode)) {
+                } else if (response.code === 555 && ['manager'].includes(loginUserStore.loginUser.roleCode)) {
                     ElMessageBox.confirm(
                         response.message,
                         '提示',
@@ -608,14 +608,14 @@ const ACT_deleteTrade = (trade) => {
                 <div class="title">
                     <div> 玉米粒收购 </div>
                     <el-icon class="field-filter-icon" @click.stop="SHOW_fieldFilter = !SHOW_fieldFilter"
-                        v-if="['sysAdmin', 'manager'].includes(userInfoStore.info.roleCode)">
+                        v-if="['sysAdmin', 'manager'].includes(loginUserStore.loginUser.roleCode)">
                         <SVG_Table />
                     </el-icon>
                 </div>
 
                 <div class="extra">
                     <el-button type="primary" @click="ACT_SHOW_addTrade"
-                        v-if="['sysAdmin', 'manager', 'operator'].includes(userInfoStore.info.roleCode)">新增交易</el-button>
+                        v-if="['sysAdmin', 'manager', 'operator'].includes(loginUserStore.loginUser.roleCode)">新增交易</el-button>
                 </div>
             </div>
             <div class="field-filter" v-if="SHOW_fieldFilter" v-click-outside="() => SHOW_fieldFilter = false">
@@ -665,7 +665,7 @@ const ACT_deleteTrade = (trade) => {
                 </template>
             </el-table-column>
             <el-table-column label="操作" width="100"
-                v-if="['sysAdmin', 'manager', 'operator'].includes(userInfoStore.info.roleCode)">
+                v-if="['sysAdmin', 'manager', 'operator'].includes(loginUserStore.loginUser.roleCode)">
                 <template #default="{ row }">
                     <el-icon style="margin: 0 3px;" @click="ACT_detail(row)">
                         <Tickets />
@@ -675,11 +675,11 @@ const ACT_deleteTrade = (trade) => {
                         <Edit />
                     </el-icon>
                     <el-icon color="#F56C6C" style="margin: 0 3px;" @click="ACT_deleteTrade(row)"
-                        v-if="row.dataStatus == 0 && row.tradeStatus == '收购中' && ['manager'].includes(userInfoStore.info.roleCode)">
+                        v-if="row.dataStatus == 0 && row.tradeStatus == '收购中' && ['manager'].includes(loginUserStore.loginUser.roleCode)">
                         <Delete />
                     </el-icon>
                     <el-icon color="#E6A23C" style="margin: 0 3px;" @click="ACT_SettleTrade(row)"
-                        v-if="['manager'].includes(userInfoStore.info.roleCode) && row.tradeStatus == '待结算'">
+                        v-if="['manager'].includes(loginUserStore.loginUser.roleCode) && row.tradeStatus == '待结算'">
                         <SVG_Settle />
                     </el-icon>
                 </template>

@@ -1,7 +1,7 @@
 <script setup>
 
-import { useUserInfoStore } from '@/stores/userInfo';
-const userInfoStore = useUserInfoStore()
+import { useLoginUserStore } from '@/stores/loginUser';
+const loginUserStore = useLoginUserStore()
 
 
 
@@ -34,13 +34,9 @@ const OPT_roleCode = computed(() => {
 
 // 过滤表设计
 const FLDTDS_User = computed(() => {
-    if (userInfoStore.info.roleCode == 'sysAdmin') {
+    if (loginUserStore.loginUser.roleCode == 'sysAdmin') {
         // 如果不是管理员,则过滤掉敏感字段
-        return TDS_User.value.filter(field => !['loginPassword', 'createUser', 'createTime', 'updateUser', 'updateTime'].includes(field.columnName))
-    }
-    if (userInfoStore.info.roleCode == 'manager') {
-        // 如果是普通用户,则过滤掉敏感字段
-        return TDS_User.value.filter(field => !['userId', 'loginPassword', 'phoneNum', 'createUser', 'createTime', 'updateUser', 'updateTime'].includes(field.columnName))
+        return TDS_User.value.filter(field => !['loginPassword', 'createUser', 'createTime', 'updateUser', 'updateTime', 'avatar'].includes(field.columnName))
     }
     return []
 })
@@ -152,7 +148,7 @@ const showPassword = ref(false)
                 <span>用户列表</span>
                 <div class="extra">
                     <el-button type="primary" @click="ACT_getUserList">刷新</el-button>
-                    <el-button type="primary" @click="ACT_SHOW_addUser" v-if="userInfoStore.info.roleCode=='sysAdmin'">新增用户</el-button>
+                    <el-button type="primary" @click="ACT_SHOW_addUser" v-if="loginUserStore.loginUser.roleCode=='sysAdmin'">新增用户</el-button>
                 </div>
             </div>
             
@@ -166,7 +162,7 @@ const showPassword = ref(false)
                     {{ field.lvs[row[field.columnName]] }}
                 </template>
             </el-table-column>
-            <el-table-column label="操作" width="100" v-if="userInfoStore.info.roleCode=='sysAdmin'">
+            <el-table-column label="操作" width="100" v-if="loginUserStore.loginUser.roleCode=='sysAdmin'">
                 <template #default="{ row }">
                     <el-button icon="Edit" circle plain type="primary"></el-button>
                     <el-button icon="Delete" circle plain type="danger"></el-button>
