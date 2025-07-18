@@ -1061,7 +1061,7 @@ const VIT_notExist = () => {
                             </el-form-item>
                         </template>
                     </el-table-column>
-                    <el-table-column label="操作" align="center" width="170">
+                    <el-table-column label="操作" align="center" width="170" v-if="title_Drawer != '表设计详情'">
                         <template #default="{ row, $index }">
                             <template v-if="FD_mixedTableDesign.dataStatus === '0'">
                                 <el-button @click="ACT_deleteUniqueKey(row, $index)" size="small">删除</el-button>

@@ -582,7 +582,7 @@ const handleSelectPerson = (item) => {
     FD_Trade.value.sellerInfo = item
     // 判断地址列表是否是数组
     if (Array.isArray(item.addressList) && item.addressList.length > 0) {
-        FD_Trade.value.address = item.addressList[0]
+        FD_Trade.value.address = item.addressList[0].address
     }
 }
 
@@ -595,10 +595,10 @@ const getPersonAddressList = (queryString, cb) => {
         if (person.phoneNum === FD_Trade.value.sellerInfo.phoneNum) {
             // 找到对应人员
             const addressList = []
-            for (const address of person.addressList) {
+            for (const item of person.addressList) {
                 addressList.push({
-                    value: address,
-                    label: address
+                    value: item.address,
+                    label: item.address
                 })
             }
             return cb(addressList)
