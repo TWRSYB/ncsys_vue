@@ -19,7 +19,7 @@ class Request {
                 }
 
                 // 添加token到headers
-                const token = loginUserStore.loginUser.token
+                const token = loginUserStore.loginUser ? loginUserStore.loginUser.token : ''
                 if (token) {
                     config.headers.Authorization = token
                 }
