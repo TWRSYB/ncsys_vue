@@ -54,6 +54,7 @@ export default defineConfig({
         proxy: {
             '/ncsys': {
                 target: 'http://localhost:8090',
+                // target: 'http://192.168.31.62:8090',
                 changeOrigin: true,
                 // rewrite: (path) => path.replace(/^\/api/, '')
             }
