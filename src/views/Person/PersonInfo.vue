@@ -7,7 +7,6 @@ const loginUserStore = useLoginUserStore()
 
 
 const TDS_Person = ref([])
-const TDS_PersonWeighRecord = ref([])
 
 const FORM_Search = ref(null)
 
@@ -43,26 +42,10 @@ const ACT_GetList = () => {
 onMounted(() => {
     // 页面加载时获取表设计
     $TDS.setTableDesign(TDS_Person, 'm_person');
-    $TDS.setTableDesign(TDS_PersonWeighRecord, 'ts_corn_grain_purchase_weigh_record');
     // 获取人员列表
     ACT_GetList()
 })
 
-const OPT_clearingForm = computed(() => {
-    try {
-        return TDS_Person.value.filter(item => item.columnName === 'clearingForm')[0].types
-    } catch (error) {
-        return {}
-    }
-});
-
-const OPT_tradeStatus = computed(() => {
-    try {
-        return TDS_Person.value.filter(item => item.columnName === 'tradeStatus')[0].types
-    } catch (error) {
-        return []
-    }
-});
 
 const OPT_sex = computed(() => {
     try {
@@ -72,7 +55,6 @@ const OPT_sex = computed(() => {
     }
 });
 
-const OPT_YN = { "Y": "是", "N": "否" }
 
 
 
@@ -167,7 +149,7 @@ const FLDTDS_Person = computed(() => {
 const SHOW_Drawer = ref(false)
 const TT_Drawer = ref('人员详情')
 const FORM_Person = ref(null)
-const ACT_SHOW_addPerson = () => {
+const ACT_addPerson = () => {
 
     // 显示抽屉
     SHOW_Drawer.value = true;
@@ -223,6 +205,20 @@ const CHG_aliasArray = (value) => {
     FD_Person.value.alias = value.join(',')
 }
 
+const CHG_idNum = (value) => {
+    if (value && value.length === 18) {
+        const sexDigit = value.substr(16, 1)
+        // 判断第17位是否是数字
+        if (/^\d$/.test(sexDigit)) {
+            if (sexDigit % 2 == 1) { // 奇数为男
+                FD_Person.value.sex = '男'
+            } else { // 女
+                FD_Person.value.sex = '女'
+            }
+        }
+    }
+}
+
 
 
 //定义表单校验规则
@@ -235,9 +231,15 @@ const rules = {
     personName: [
         { required: true, message: '请输入姓名', trigger: 'change' },
         { min: 2, max: 10, message: '长度为2~5位', trigger: 'change' },
-        { validator: $VLD.validateChinese, trigger: 'blur' },
+        { validator: $VLD.V_Chinese, trigger: 'blur' },
         // 姓名不能包含空格
         { pattern: /^[^\s]*$/, message: '姓名不能包含空格', trigger: 'change' }
+    ],
+    idNum: [
+        { validator: $VLD.V_IdCard, message: '身份证号不符合规则', trigger: 'change' }
+    ],
+    sex: [
+        { validator: (rule, value, callback) => $VLD.VP_SexMatchIdNum(rule, value, callback, FD_Person.value.idNum), trigger: 'change' }
     ],
 
 }
@@ -245,91 +247,63 @@ const rules = {
 
 
 const SBM_savePerson = () => {
-    FORM_Person.value.clearValidate();        // 清除全部
-    FORM_Person.value.validateField(['phoneNum', 'personName', 'grossWeight'], (valid, fields) => {
+    FORM_Person.value.validate((valid, fields) => {
         if (!valid) {
             // 表单校验不通过
             ElMessage.warning('录入和检查必要的信息后再保存');
             return false;
         }
 
+        if (TT_Drawer.value == '新增人员') {
+            // 提交保存
+            $Requests.post('/person/savePerson', FD_Person.value, { showSuccessMsg: true })
+                .then(response => {
+                    if (response.code === 200) {
+                        SHOW_Drawer.value = false;
+                        ACT_GetList();
+                    }
+                })
+        } else if (TT_Drawer.value == '编辑人员') {
+            // 提交更新
+            $Requests.post('/person/updatePerson', FD_Person.value, { showSuccessMsg: true })
+                .then(response => {
+                    if (response.code === 200) {
+                        SHOW_Drawer.value = false;
+                        ACT_GetList();
+                    }
+                })
 
-        // 提交保存收购
-        $Requests.post('/person/savePerson', FD_Person.value, { showSuccessMsg: true })
-            .then(response => {
-                if (response.code === 200) {
-                    SHOW_Drawer.value = false;
-                    ACT_GetList();
-                } else if (response.code === 555 && ['manager'].includes(loginUserStore.loginUser.roleCode)) {
-                    ElMessageBox.confirm(
-                        response.message,
-                        '提示',
-                        {
-                            distinguishCancelAndClose: true,
-                            confirmButtonText: `使用 ${response.message.split(' ')[1]} 提交`,
-                            cancelButtonText: `更新姓名为 ${FD_Person.value.personName} 并提交`,
-                            type: 'warning',
-                        }
-                    )
-                        .then(() => {
-                            // 使用已有姓名提交
-                            FD_Person.value.personName = response.message.split(' ')[1];
-                            SBM_savePerson()
-                        })
-                        .catch((action) => {
-                            if (action === 'close') {
-                                // 关闭提示
-                                return;
-                            }
-                            // 更新姓名并提交
-                            $Requests.post('/person/updateNameByPhoneNum', FD_Person.value, { showSuccessMsg: true })
-                                .then((response) => {
-                                    if (response.code === 200) {
-                                        // 更新成功后再次提交
-                                        SBM_savePerson();
-                                    }
-                                });
-                        })
-                }
-            })
+        }
+
+
     });
 };
 
 
-
 const ACT_EditPerson = (row) => {
-    // 查询人员详情
-    $Requests.post('/person/getPersonDetail', row)
-        .then(response => {
-            if (response.code === 200) {
-                if (response.data.tradeStatus !== '收购中') {
-                    ElMessage.warning('只能编辑收购中的人员');
-                    return;
-                }
-                init_FD_Person(); // 初始化表单数据
-                // 显示抽屉
-                SHOW_Drawer.value = true;
-                TT_Drawer.value = '编辑人员'
-                nextTick(() => {
-                    // 重置表单数据
-                    FORM_Person.value.resetFields();
-                    // 成功获取人员详情
-                    FD_Person.value = response.data;
-                })
-            }
-        })
+    // 显示抽屉
+    SHOW_Drawer.value = true;
+    TT_Drawer.value = '编辑人员'
+    init_FD_Person(); // 初始化表单数据
+    nextTick(() => {
+        // 重置表单数据
+        FORM_Person.value.resetFields();
+        FD_Person.value = row;
+        FD_Person.value.provinceCityArea = [row.province, row.city, row.area]
+        if (row.alias) {
+            FD_Person.value.aliasArray = row.alias.split(',')
+        }
+    })
 };
 
 const ACT_detail = (row) => {
 
-    // 成功获取人员详情
     SHOW_Drawer.value = true
     TT_Drawer.value = '人员详情'
     init_FD_Person(); // 初始化表单数据
     nextTick(() => {
         // 重置表单数据
         FORM_Person.value.resetFields();
-        // 成功获取人员详情
         FD_Person.value = row;
         FD_Person.value.provinceCityArea = [row.province, row.city, row.area]
         if (row.alias) {
@@ -347,149 +321,7 @@ const ACT_detail = (row) => {
 }
 
 
-const SHOW_Settle = ref(false) // 控制结算对话框显示状态
-const TT_Settle = ref('结算') // 结算标题
-const FD_Settle = ref({}) // 结算表单数据
-const FORM_Settle = ref(null) // 人员表单
 
-const rules_settle = {
-
-    totalWeight: [
-        { required: true, message: '请输入总重', trigger: 'change' }
-    ],
-    totalPrice: [
-        { required: true, message: '请输入总价', trigger: 'change' },
-        // 总价范围为0.01~100000
-        { validator: $VLD.doubleRange(0.01, 100000), trigger: 'blur' }
-    ],
-    planClearingDate: [
-        { required: true, message: '请选择计划结算日期', trigger: 'change' }
-    ],
-
-    actualClearingDate: [
-        { required: true, message: '请选择实际结算日期', trigger: 'change' }
-    ],
-    premium: [
-        { required: true, message: '请输入补价', trigger: 'change' },
-        { validator: $VLD.doubleRange(-2000, 2000), trigger: 'blur' }
-    ]
-}
-
-const calculateSettle = computed(() => {
-    // 计算结算金额
-    let { totalPrice, premium } = FD_Settle.value
-    if (totalPrice && premium) {
-        return { clearingAmount: (Number(totalPrice) + Number(premium)).toFixed(2) }
-    } else {
-        return { clearingAmount: Number(totalPrice) }
-    }
-})
-
-const SBM_Settle = () => {
-    FORM_Settle.value.validate((valid, fields) => {
-        if (!valid) {
-            // 表单校验不通过
-            ElMessage.warning('请检查输入项');
-            return false;
-        }
-
-        // 补价绝对值超过总价的30%则阻止, 超过10%则弹窗确认
-        if (Math.abs(FD_Settle.value.premium) > FD_Settle.value.totalPrice * 0.3) {
-            ElMessage.warning('补价超过总价的30%, 若继续结算请联系系统管理员');
-            return false;
-        } else if (Math.abs(FD_Settle.value.premium) > FD_Settle.value.totalPrice * 0.1) {
-            ElMessageBox.confirm('补价超过总价的10%, 是否继续结算？', '提示', {
-                confirmButtonText: '继续结算',
-                cancelButtonText: '取消结算',
-                type: 'warning'
-            }).then(() => {
-                // 继续结算
-                settlePerson();
-            }).catch(() => {
-                // 取消结算
-                return false;
-            });
-        } else {
-            settlePerson()
-        }
-
-    });
-}
-
-const settlePerson = () => {
-    // 计算结算金额
-    FD_Settle.value.clearingAmount = calculateSettle.value.clearingAmount;
-    // 提交结算
-    $Requests.post('/person/settlePerson', FD_Settle.value, { showSuccessMsg: true })
-        .then(response => {
-            if (response.code === 200) {
-                SHOW_Settle.value = false;
-                ACT_GetList();
-            }
-        })
-}
-
-
-const likePersonList = ref([])
-
-const getPersonLike = (queryString, cb, fieldName) => {
-
-
-    if (!queryString) {
-        return cb([])
-    }
-    if (fieldName === 'phoneNum' && queryString.length < 3) {
-        return cb([])
-    }
-    if (fieldName === 'personName' && queryString.length < 1) {
-        return cb([])
-    }
-
-    // 根据手机号模糊查询人员
-    $Requests.post('/person/getPersonLike', { [fieldName]: queryString }, { showLoading: false, showErrorMsg: false })
-        .then(response => {
-            if (response.code === 200) {
-                // 成功获取人员列表
-                likePersonList.value = response.data
-                return cb(response.data)
-            } else {
-                return cb([])
-            }
-        }).catch(error => {
-            return cb([])
-        })
-
-}
-
-
-const handleSelectPerson = (item) => {
-    FD_Person.value = item
-    // 判断地址列表是否是数组
-    if (Array.isArray(item.addressList) && item.addressList.length > 0) {
-        FD_Person.value.address = item.addressList[0]
-    }
-}
-
-const getPersonAddressList = (queryString, cb) => {
-    if (!likePersonList.value || likePersonList.value.length === 0) {
-        return cb([])
-    }
-    // 获取手机号对应人员的地址列表
-    for (const person of likePersonList.value) {
-        if (person.phoneNum === FD_Person.value.phoneNum) {
-            // 找到对应人员
-            const addressList = []
-            for (const address of person.addressList) {
-                addressList.push({
-                    value: address,
-                    label: address
-                })
-            }
-            return cb(addressList)
-        }
-    }
-    return cb([])
-}
 
 
 
@@ -510,7 +342,7 @@ const getPersonAddressList = (queryString, cb) => {
                 </div>
 
                 <div class="extra">
-                    <el-button type="primary" @click="ACT_SHOW_addPerson"
+                    <el-button type="primary" @click="ACT_addPerson"
                         v-if="['sysAdmin', 'manager'].includes(loginUserStore.loginUser.roleCode)">新增人员</el-button>
                 </div>
             </div>
@@ -597,7 +429,9 @@ const getPersonAddressList = (queryString, cb) => {
 
                 <el-row>
                     <el-form-item label="身份证号" prop="idNum" v-inline-flex="50">
-                        <el-input v-model="FD_Person.idNum"></el-input>
+                        <el-input v-model="FD_Person.idNum"
+                            v-input-filter="{ regex: /[^0-9xX]/g, maxLength: 18, upOrLower: 'up' }" @change="CHG_idNum">
+                        </el-input>
                     </el-form-item>
 
                     <el-form-item label="性别" prop="sex" v-inline-flex="50">
@@ -631,7 +465,7 @@ const getPersonAddressList = (queryString, cb) => {
             </el-form>
 
             <!-- 地址列表 -->
-            <el-card v-if="TT_Drawer == '人员详情' && FD_Person.list_address.length > 0">
+            <el-card v-if="TT_Drawer == '人员详情' && FD_Person.list_address && FD_Person.list_address.length">
                 <template #header>
                     <div>地址列表</div>
                 </template>
@@ -650,56 +484,6 @@ const getPersonAddressList = (queryString, cb) => {
             {{ FD_Person }}
         </el-drawer>
     </el-card>
-    <el-dialog v-model="SHOW_Settle" :title="TT_Settle" width="1200">
-        <el-form ref="FORM_Settle" :model="FD_Settle" label-width="110px" :rules="rules_settle">
-            <el-row>
-
-                <!-- 总重 -->
-                <el-form-item label="总重" prop="totalWeight" v-inline-flex>
-                    <el-input v-model="FD_Settle.totalWeight" disabled>
-                        <template #append>kg</template>
-                    </el-input>
-                </el-form-item>
-                <el-form-item label="总价" prop="totalPrice" v-inline-flex>
-                    <el-input v-model="FD_Settle.totalPrice" disabled>
-                        <template #append>元</template>
-                    </el-input>
-                </el-form-item>
-                <!-- 计划结算日期 -->
-                <el-form-item v-if="FD_Settle.clearingForm == '延结'" label="计划结算日期" prop="planClearingDate"
-                    v-inline-flex>
-                    <el-date-picker v-model="FD_Settle.planClearingDate" value-format="YYYY-MM-DD"
-                        disabled></el-date-picker>
-                </el-form-item>
-            </el-row>
-
-            <el-row>
-                <el-form-item label="实际结算日期" prop="actualClearingDate" v-inline-flex>
-                    <el-date-picker v-model="FD_Settle.actualClearingDate" value-format="YYYY-MM-DD"></el-date-picker>
-                </el-form-item>
-                <el-form-item label="补价" prop="premium" v-inline-flex>
-                    <el-input v-model="FD_Settle.premium" v-input-double="3">
-                        <template #append>元</template>
-                    </el-input>
-                </el-form-item>
-            </el-row>
-
-            <el-form-item label="备注" prop="remark">
-                <el-input v-model="FD_Settle.remark" type="textarea"></el-input>
-            </el-form-item>
-        </el-form>
-        <template #footer>
-            <div class="dialog-footer">
-                <div>
-                    <!-- 最终结算金额 -->
-                    <span>最终结算金额: {{ calculateSettle.clearingAmount }} 元</span>
-                </div>
-                <div>
-                    <el-button type="primary" @click="SBM_Settle">结算</el-button>
-                </div>
-            </div>
-        </template>
-    </el-dialog>
 </template>
 <style lang="scss" scoped>
 .dialog-footer {

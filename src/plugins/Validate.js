@@ -16,7 +16,6 @@ class Validate {
 
         return (rule, value, callback) => {
 
-            console.log(111);
 
             // 如果值为空或未定义，直接通过验证
             if (value === undefined || value === null || value === '') {
@@ -65,8 +64,42 @@ class Validate {
         }
     }
 
+    /**
+     * 验证性别与身份证号是否匹配
+     * @param rules 
+     * @param value 性别值(男/女)
+     * @param callback 回调函数
+     * @param idNum 身份证号
+     * @returns 验证结果
+     */
+    VP_SexMatchIdNum = (rules, value, callback, idNum) => {
+        if (!value) {
+            callback()
+        }
+
+        if (!idNum || idNum.length != 18) {
+            return callback();
+        }
+        const sexDigit = idNum.substr(16, 1)
+        // 判断第17位是否是数字
+        if (!/^\d$/.test(sexDigit)) {
+            return callback();
+        }
+
+        if (sexDigit % 2 == 1) { // 奇数为男
+            if (value == '男') {
+                return callback();
+            }
+        } else { // 女
+            if (value == '女') {
+                return callback();
+            }
+        }
+        callback(new Error('性别与身份证号不符'));
+    }
+
     // 中文姓名校验规则
-    validateChinese(rule, value, callback) {
+    V_Chinese = (rule, value, callback) => {
         if (!value) {
             callback()
         }
@@ -81,6 +114,88 @@ class Validate {
         }
     }
 
+    // 身份证号校验规则
+    V_IdCard = (rule, value, callback) => {
+
+        if (!value) {
+            callback()
+        }
+
+        if (!this.validateIdCard(value)) {
+            callback(new Error('身份证号不符合规则'))
+        } else {
+            callback()
+        }
+    }
+
+    /**
+     * 验证中国大陆身份证号码
+     * @param {string} idCard 身份证号码
+     * @returns {boolean} 是否有效
+     */
+    validateIdCard = (idCard) => {
+        // 基本格式校验
+        if (typeof idCard !== 'string') return false;
+        const cleanId = idCard.toUpperCase();
+        if (!/(^\d{15}$)|(^\d{17}(\d|X)$)/.test(cleanId)) return false;
+
+        // 长度判断
+        const is18 = cleanId.length === 18;
+
+        // 地区码校验（前6位）
+        const areaCode = cleanId.substring(0, 6);
+        const areaCodes = [
+            '11', '12', '13', '14', '15',  // 华北
+            '21', '22', '23',              // 东北
+            '31', '32', '33', '34',        // 华东
+            '35', '36', '37',              // 华中
+            '41', '42', '43', '44', '45', '46',  // 华南
+            '50', '51', '52', '53', '54',  // 西南
+            '61', '62', '63', '64', '65'   // 西北
+        ];
+        if (!areaCodes.includes(areaCode.substring(0, 2))) {
+            return false;
+        }
+
+        // 出生日期校验
+        let birthDate;
+        if (is18) {
+            birthDate = `${cleanId.substring(6, 10)}-${cleanId.substring(10, 12)}-${cleanId.substring(12, 14)}`;
+        } else {
+            birthDate = `19${cleanId.substring(6, 8)}-${cleanId.substring(8, 10)}-${cleanId.substring(10, 12)}`;
+        }
+
+        if (isNaN(Date.parse(birthDate))) {
+            return false;
+        }
+        const [year, month, day] = birthDate.split('-').map(Number);
+        const date = new Date(year, month - 1, day);
+        if (
+            date.getFullYear() !== year ||
+            date.getMonth() + 1 !== month ||
+            date.getDate() !== day
+        ) {
+            return false;
+        }
+
+        // 18位身份证需要校验码
+        if (is18) {
+            const weights = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2];
+            const checkCodes = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2'];
+
+            let sum = 0;
+            for (let i = 0; i < 17; i++) {
+                sum += parseInt(cleanId[i]) * weights[i];
+            }
+
+            const mod = sum % 11;
+            if (cleanId[17] !== checkCodes[mod]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     // ======================================================== 以下为表格内表单验证方法VIT ========================================================
     /**     

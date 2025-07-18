@@ -30,7 +30,7 @@ export default {
 
             // 大小写转换
             if (upOrLower == 'up') {
-                newValue = newValue.toUpCase();
+                newValue = newValue.toUpperCase();
             } else if (upOrLower == 'lower') {
                 newValue = newValue.toLowerCase();
             }

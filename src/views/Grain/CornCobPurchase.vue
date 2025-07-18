@@ -251,7 +251,7 @@ const rules = {
         personName: [
             { required: true, message: '请输入姓名', trigger: 'change' },
             { min: 2, max: 10, message: '长度为2~5位', trigger: 'change' },
-            { validator: $VLD.validateChinese, trigger: 'blur' },
+            { validator: $VLD.V_Chinese, trigger: 'blur' },
             // 姓名不能包含空格
             { pattern: /^[^\s]*$/, message: '姓名不能包含空格', trigger: 'change' }
         ],
