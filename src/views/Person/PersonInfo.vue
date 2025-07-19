@@ -410,7 +410,6 @@ const ACT_detail = (row) => {
             :total="QUERY_Main.total" :page-sizes="[10, 20, 50, 100]" @change="ACT_GetList"
             layout="jumper, total, sizes, prev, pager, next" />
 
-        {{ TDS_Person }}
 
         <!-- 新增 -->
         <el-drawer v-model="SHOW_Drawer" :title="TT_Drawer" direction="rtl" size="50%">
@@ -481,7 +480,6 @@ const ACT_detail = (row) => {
                     <el-button type="primary" @click="SBM_savePerson" v-if="TT_Drawer != '人员详情'">保存</el-button>
                 </div>
             </template>
-            {{ FD_Person }}
         </el-drawer>
     </el-card>
 </template>

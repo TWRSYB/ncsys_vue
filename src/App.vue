@@ -24,11 +24,12 @@
 
 :deep(.search-form) {
     .el-form-item {
-        width: 22%;
+        width: 270px;
     }
 
     .search-btn {
         float: right;
+        width: 250px;
 
         .el-form-item__content {
             justify-content: flex-end;

@@ -73,6 +73,12 @@ const routes = [
                 component: PersonInfoVue,
                 meta: { requiresAuth: true, roles: ['sysAdmin', 'manager'] },
             },
+            // 工人信息
+            {
+                path: '/Worker/WorkerInfo',
+                component: () => import('@/views/Worker/WorkerInfo.vue'),
+                meta: { requiresAuth: true, roles: ['sysAdmin', 'manager'] },
+            },
             // 用户功能
             // 用户信息
             {
@@ -80,6 +86,7 @@ const routes = [
                 component: () => import('@/views/User/UserInfo.vue'),
                 meta: { requiresAuth: true, roles: ['sysAdmin', 'manager'] },
             },
+
         ],
     },
 ];

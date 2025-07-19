@@ -54,7 +54,7 @@ const nongziMenuItems = [
 // 数据维护菜单
 const dataMaintainMenuItems = [
     { path: '/Person/PersonInfo', title: '人员信息', icon: 'SVG_PersonInfo', allowedRoles: ['sysAdmin', 'manager'] },
-    { path: '/Person/WorkerInfo', title: '工人信息', icon: 'SVG_WorkerManage', allowedRoles: ['sysAdmin', 'manager'] },
+    { path: '/Worker/WorkerInfo', title: '工人信息', icon: 'SVG_WorkerManage', allowedRoles: ['sysAdmin', 'manager'] },
 ]
 
 </script>
