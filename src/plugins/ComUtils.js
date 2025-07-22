@@ -70,6 +70,53 @@ class ComUtils {
         return cloneTarget
     }
 
+    /**
+    * 深拷贝对象属性（保留目标对象原有属性）
+    * @param {Object} source 源对象
+    * @param {Object} target 目标对象
+    * @returns {Object} 深拷贝后的目标对象
+    */
+    deepCopy = (source, target = {}) => {
+        const map = new WeakMap()
+
+        const copy = (src, tgt) => {
+            // 处理基本类型和null
+            if (src === null || typeof src !== 'object') {
+                return src
+            }
+
+            // 处理循环引用
+            if (map.has(src)) {
+                return map.get(src)
+            }
+
+            // 处理特殊对象类型
+            const type = src.constructor
+            switch (type) {
+                case Date:
+                    return new Date(src)
+                case RegExp:
+                    return new RegExp(src)
+                case Array:
+                    tgt = Array.isArray(tgt) ? tgt : []
+                    map.set(src, tgt)
+                    src.forEach((item, index) => {
+                        tgt[index] = copy(item, tgt[index])
+                    })
+                    return tgt
+                default:
+                    tgt = tgt || {}
+                    map.set(src, tgt)
+                    Object.keys(src).forEach(key => {
+                        tgt[key] = copy(src[key], tgt[key])
+                    })
+                    return tgt
+            }
+        }
+
+        return copy(source, target)
+    }
+
 
     /**
      * 数组比较
@@ -105,6 +152,12 @@ class ComUtils {
      */
     toCamelCase(str) {
         return str.replace(/_([a-z])/g, (match, letter) => letter.toUpperCase())
+    }
+
+    getYM = (date) => {
+        const year = date.getFullYear()
+        const month = date.getMonth() + 1
+        return `${year}-${String(month).padStart(2, '0')}`
     }
 
 }
