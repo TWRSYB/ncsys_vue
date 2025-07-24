@@ -37,7 +37,7 @@ const ACT_GetWorkerAndAttendanceList = () => {
         })
 }
 
-const FLDLIST_workerAndAttendance = computed(() => { 
+const FLDLIST_workerAndAttendance = computed(() => {
     return LIST_workerAndAttendance.value.filter(workerAndAttendance => FLD_worker.value.includes(workerAndAttendance.workerId))
 })
 
@@ -278,12 +278,49 @@ const ACT_EditAttendance = (row, attendance) => {
 
 
 
+const SHOW_print = ref(false);
 
 
 
 
 
+const printConfig = {
+    id: 'printArea',
+    // popTitle: ' ', // 空标题避免浏览器默认标题
+    extraHead: ` 
+    <style>
+      /* 关键：设置横向布局 */
+      @page {
+        size: A4 landscape; /* landscape 表示横向 */
+        margin: 0;
+      }
+      
+      body {
+        /* 横向尺寸：297mm宽 x 210mm高 */
+        width: 297mm !important;
+        max-width: 297mm !important;
+        min-width: 297mm !important;
+        height: 179mm !important;
+        max-height: 179mm !important;
+        min-height: 179mm !important;
+        padding: 15mm;
+      }
 
+        
+      /* 隐藏不需要的元素 */
+      .no-print {
+        display: none !important;
+      }
+
+    </style>
+  `,
+    beforeOpenCallback: () => {
+        console.log('开始打印前准备');
+    },
+    closeCallback: () => {
+        console.log('打印窗口已关闭');
+    }
+};
 
 </script>
 
@@ -299,7 +336,7 @@ const ACT_EditAttendance = (row, attendance) => {
                     </el-icon>
                 </div>
                 <div class="extra">
-                    <el-button type="success" @click="exportData">导出数据</el-button>
+                    <el-button type="success" @click="SHOW_print = true">打印</el-button>
                 </div>
             </div>
             <div class="field-filter" v-if="SHOW_workerFilter" v-click-outside="() => SHOW_workerFilter = false">
@@ -356,7 +393,7 @@ const ACT_EditAttendance = (row, attendance) => {
                     <!-- 上一月 -->
                     <el-button @click="ACT_preMonth">上一月</el-button>
                     <el-date-picker v-model="currentMonth" type="month" placeholder="选择月份" :clearable="false"
-                        :disabled-date="(date) => (date <= new Date('2025-01-01')) || (date > new Date()) ">
+                        :disabled-date="(date) => (date <= new Date('2025-01-01')) || (date > new Date())">
                     </el-date-picker>
                     <!-- 下一月 -->
                     <el-button @click="ACT_nextMonth">下一月</el-button>
@@ -366,7 +403,7 @@ const ACT_EditAttendance = (row, attendance) => {
 
 
         <!-- 工资表格 -->
-        <el-table :data="FLDLIST_workerAndAttendance" style="width: 100%" row-key="id" height="600">
+        <el-table :data="FLDLIST_workerAndAttendance" style="width: 100%" row-key="id">
             <!-- 固定姓名列 -->
             <el-table-column prop="personName" label="姓名" width="100" fixed></el-table-column>
 
@@ -423,11 +460,6 @@ const ACT_EditAttendance = (row, attendance) => {
                 </template>
             </el-table-column>
         </el-table>
-        FLDLIST_workerAndAttendance {{ FLDLIST_workerAndAttendance }}
-        <br>
-        dateColumns: {{ dateColumns }}
-        <br>
-        editDate: {{ editDate }}
     </el-card>
 
     <!-- 出工记录表单对话框 -->
@@ -485,6 +517,96 @@ const ACT_EditAttendance = (row, attendance) => {
         </template>
     </el-dialog>
 
+    <el-dialog v-model="SHOW_print" title="打印预览" width="90%" :show-close="false" top="3vh">
+        <template #header>
+            <div class="header"
+                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 12px;">
+                <div class="title">
+                    <el-text type="info" size="large" tag="b">
+                        打印预览
+                    </el-text>
+                </div>
+                <div class="extra">
+                    <el-button type="success" v-print="printConfig">打印</el-button>
+                    <el-button @click="SHOW_print = false">关闭</el-button>
+                </div>
+            </div>
+        </template>
+        <div id="printArea" class="print-paper"
+            style="width: 297mm; height: 209mm;padding: 15px;box-sizing: border-box;margin: 0 auto;background: white;box-shadow: 0 0 5px rgba(0,0,0,0.1);">
+            <div class="controller">
+
+                <div style="display: flex; align-items: center;">
+                    <div style="margin-right: 15px;">
+                        <el-text size="large">注释 : </el-text>
+                    </div>
+                    <div class="item-content">
+                        <el-text type="warning" size="large">
+                            记录中
+                        </el-text>
+                        <el-text type="primary" size="large">
+                            待结算
+                        </el-text>
+                        <el-text size="large">
+                            已结算
+                        </el-text>
+                    </div>
+                </div>
+
+                <div>
+                    <el-text size="large">月份 : {{ $Com.getYM(currentMonth) }} </el-text>
+                </div>
+            </div>
+
+            <!-- 工资表格 -->
+            <el-table :data="FLDLIST_workerAndAttendance" style="width: 100%" row-key="id" border>
+                <!-- 固定姓名列 -->
+                <el-table-column prop="personName" label="姓名" width="75mm" fixed></el-table-column>
+
+                <!-- 动态日期列 -->
+                <el-table-column v-for="(date, index) in dateColumns" :key="date.date" :label="date.day" width="30mm"
+                    align="center">
+
+                    <template #header>
+                        <div class="date-column-header">
+                            <div>{{ date.day }}</div>
+                            <div>{{ date.weekName }}</div>
+                        </div>
+                    </template>
+
+                    <template #default="{ row }">
+                        <div v-if="date.date > $Com.getYMD()"></div>
+                        <div v-else>
+                            <div v-if="row[date.date]">
+                                <el-text v-if="row[date.date].tradeStatus === '已结算'">
+                                    {{ row[date.date].dayPay }}
+                                </el-text>
+                                <el-text type="primary" v-if="row[date.date].tradeStatus === '待结算'">
+                                    {{ row[date.date].dayPay }}
+                                </el-text>
+                                <el-text type="warning" v-if="row[date.date].tradeStatus === '记录中'">
+                                    {{ row[date.date].dayPay }}
+                                </el-text>
+
+                            </div>
+                            <el-text type="info" v-else>
+                                无
+                            </el-text>
+                        </div>
+                    </template>
+
+                </el-table-column>
+
+                <!-- 总计列 -->
+                <el-table-column label="总计" width="75mm" fixed="right">
+                    <template #default="{ row }">
+                        {{ calculateTotal(row) }}
+                    </template>
+                </el-table-column>
+            </el-table>
+        </div>
+    </el-dialog>
+
 </template>
 
 
@@ -527,6 +649,7 @@ const ACT_EditAttendance = (row, attendance) => {
     // 鼠标样式
     cursor: pointer;
     // 文本不可选
+    user-select: none;
     -webkit-user-select: none;
 }
 
@@ -590,10 +713,10 @@ const ACT_EditAttendance = (row, attendance) => {
         justify-content: center;
     }
 
-    .abcd.is-disabled {
-        // pointer-events: none;
-        /* 彻底禁用所有指针事件 */
-    }
+    // .abcd.is-disabled {
+    //     // pointer-events: none;
+    //     /* 彻底禁用所有指针事件 */
+    // }
 }
 
 :deep().el-table__body {

@@ -22,6 +22,8 @@ import styleInlineFlex from '@/directives/inline-flex'
 import inputInt from '@/directives/input-int'
 import inputDouble from '@/directives/input-double'
 import clickOutside from '@/directives/click-outside'
+import print from 'vue3-print-nb'
+
 
 
 
@@ -53,6 +55,8 @@ const persist = createPersistedState() // 创建持久化状态插件实例
 pinia.use(persist)  // 持久化状态插件
 app.use(pinia) // 使用 Pinia 状态管理 (挂载 Pinia 实例到 Vue 应用)
 app.use(router) // 使用路由
+app.use(print)
+
 
 // 全局属性
 app.config.globalProperties.$Com = comUtils // 挂载 ComUtils 到全局属性
