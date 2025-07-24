@@ -16,6 +16,7 @@ const ACT_GetWorkerList = () => {
         .then((response) => {
             if (response.code === 200) {
                 LIST_worker.value = response.data;
+                FLD_worker.value = response.data.slice(0, 15).map(item => item.workerId)
             }
         })
 }
@@ -36,6 +37,10 @@ const ACT_GetWorkerAndAttendanceList = () => {
         })
 }
 
+const FLDLIST_workerAndAttendance = computed(() => { 
+    return LIST_workerAndAttendance.value.filter(workerAndAttendance => FLD_worker.value.includes(workerAndAttendance.workerId))
+})
+
 const WIDTH_dateColumn = ref(
     localStorage.getItem('widthDateColumn')
         ? parseInt(localStorage.getItem('widthDateColumn'))
@@ -50,16 +55,16 @@ watch(WIDTH_dateColumn, (newVal) => {
 const currentMonth = ref(new Date())
 watch(currentMonth, (newVal) => {
     generateCalendar(newVal)
+    ACT_GetWorkerAndAttendanceList()
 })
 const dateColumns = ref([])
-const editDate = ref('')
+const editDate = ref($Com.getYMD())
 
 // 生成日历列
 const generateCalendar = (date) => {
     const year = date.getFullYear()
     const month = date.getMonth()
     const days = new Date(year, month + 1, 0).getDate()
-    editDate.value = `${year}-${String(month + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 
     dateColumns.value = Array.from({ length: days }, (_, i) => {
         const day = i + 1
@@ -81,20 +86,32 @@ const ACT_preMonth = () => {
     // 上一月
     const year = currentMonth.value.getFullYear()
     const month = currentMonth.value.getMonth()
+    if (new Date(year, month - 1) < new Date(2025, 0)) {
+        return
+    }
     currentMonth.value = new Date(year, month - 1)
 }
 const ACT_nextMonth = () => {
     // 下一月
     const year = currentMonth.value.getFullYear()
     const month = currentMonth.value.getMonth()
+    if (new Date(year, month + 1) > new Date()) {
+        return
+    }
     currentMonth.value = new Date(year, month + 1)
 }
 
 
 
 // 计算总工资
-const calculateTotal = (worker) => {
-
+const calculateTotal = (row) => {
+    let total = 0
+    dateColumns.value.forEach(column => {
+        if (row[column.date]) {
+            total += row[column.date].dayPay
+        }
+    })
+    return total
 }
 
 // 导出数据
@@ -103,7 +120,6 @@ const exportData = () => {
         name: worker.name,
         details: worker
     }))
-    console.log('导出数据：', exportData)
     ElMessage.success('数据已导出到控制台')
 }
 
@@ -145,19 +161,18 @@ const ACT_AddAttendance = (row, date) => {
     TT_attendance.value = "新增出工记录";
     SHOW_attendance.value = true;
     init_FD_attendance();
-    nextTick(() => {
-        // 重置表单数据
-        FORM_attendance.value.resetFields();
-        FD_attendance.value = $Com.deepCopy(row, FD_attendance.value);
-        FD_attendance.value = $Com.deepCopy(date, FD_attendance.value);
-    })
+    FD_attendance.value = $Com.deepCopy(row, FD_attendance.value);
+    FD_attendance.value = $Com.deepCopy(date, FD_attendance.value);
 }
+
+// 控制监视执行的标志变量
+const shouldWatchFD_attendance = ref(true);
 
 // 监视上午出工和下午出工
 watch(() => FD_attendance.value.morningYn,
     (newVal, oldVal) => {
+        if (!shouldWatchFD_attendance.value) return; // 检查标志变量
         if (newVal === 'Y') {
-            FD_attendance.value.morningPay = newVal.dailyPay
             const dailyPay = FD_attendance.value.dailyPay || 80
             const halfPay = dailyPay / 2
             FD_attendance.value.morningPay = halfPay
@@ -168,8 +183,8 @@ watch(() => FD_attendance.value.morningYn,
 )
 watch(() => FD_attendance.value.afternoonYn,
     (newVal, oldVal) => {
+        if (!shouldWatchFD_attendance.value) return; // 检查标志变量
         if (newVal === 'Y') {
-            FD_attendance.value.afternoonPay = newVal.dailyPay
             const dailyPay = FD_attendance.value.dailyPay || 80
             const halfPay = dailyPay / 2
             FD_attendance.value.afternoonPay = halfPay
@@ -182,6 +197,7 @@ watch(() => FD_attendance.value.afternoonYn,
 // 监视上午和下午工钱的变动
 watch(() => [FD_attendance.value.morningPay, FD_attendance.value.afternoonPay],
     (newVal, oldVal) => {
+        if (!shouldWatchFD_attendance.value) return; // 检查标志变量
         const morningPay = +FD_attendance.value.morningPay || 0
         const afternoonPay = +FD_attendance.value.afternoonPay || 0
         FD_attendance.value.dayPay = morningPay + afternoonPay
@@ -209,16 +225,58 @@ const SBM_saveAttendance = () => {
             ElMessage.warning('录入和检查必要的信息后再保存');
             return false;
         }
-        $Requests.post('/workerAttendance/addWorkerAttendance', FD_attendance.value, { showSuccessMsg: true })
-            .then((response) => {
-                if (response.code === 200) {
-                    SHOW_attendance.value = false
-                    ACT_GetWorkerAndAttendanceList()
-                }
-            })
+        // 提交新增
+        if (TT_attendance.value == '新增出工记录') {
+            $Requests.post('/workerAttendance/addWorkerAttendance', FD_attendance.value, { showSuccessMsg: true })
+                .then((response) => {
+                    if (response.code === 200) {
+                        SHOW_attendance.value = false
+                        ACT_GetWorkerAndAttendanceList()
+                    }
+                })
+        } else { // 提交更新
+            $Requests.post('/workerAttendance/updateWorkerAttendance', FD_attendance.value, { showSuccessMsg: true })
+                .then((response) => {
+                    if (response.code === 200) {
+                        SHOW_attendance.value = false
+                        ACT_GetWorkerAndAttendanceList()
+                    }
+                })
+        }
+
     })
 
 }
+
+const ACT_ViewAttendance = (row, attendance) => {
+    shouldWatchFD_attendance.value = false;
+    TT_attendance.value = "查看出工记录";
+    SHOW_attendance.value = true;
+    init_FD_attendance();
+
+    FD_attendance.value = $Com.deepCopy(attendance, FD_attendance.value);
+    FD_attendance.value.personName = row.personName;
+    FD_attendance.value.phoneNum = row.phoneNum;
+    nextTick(() => {
+        shouldWatchFD_attendance.value = true;
+    })
+}
+
+const ACT_EditAttendance = (row, attendance) => {
+    shouldWatchFD_attendance.value = false;
+    TT_attendance.value = "修改出工记录";
+    SHOW_attendance.value = true;
+    init_FD_attendance();
+
+    FD_attendance.value = $Com.deepCopy(attendance, FD_attendance.value);
+    FD_attendance.value.personName = row.personName;
+    FD_attendance.value.phoneNum = row.phoneNum;
+    nextTick(() => {
+        shouldWatchFD_attendance.value = true;
+    })
+}
+
+
 
 
 
@@ -254,7 +312,6 @@ const SBM_saveAttendance = () => {
                 </el-checkbox-group>
             </div>
         </template>
-
         <!-- 操作栏
         <div class="toolbar">
             <el-date-picker v-model="currentMonth" type="month" placeholder="选择月份" @change="generateCalendar" />
@@ -262,64 +319,111 @@ const SBM_saveAttendance = () => {
         </div> -->
 
         <!-- 搜索表单 -->
-        <div style="display: flex; justify-content: space-between; padding: 5px 20px 20px;">
-            <div style="display: flex; align-items: center;">
-                <el-text size="large">缩放比例</el-text>
-                <el-button @click="WIDTH_dateColumn -= 1" icon="Minus" text></el-button>
-                <el-slider v-model="WIDTH_dateColumn" :step="1" :max="60" :min="20" style="width: 200px;" />
-                <el-button @click="WIDTH_dateColumn += 1" icon="Plus" text></el-button>
+        <div class="controller">
+            <div class="cont-item">
+                <div class="item-title">
+                    <el-text size="large">缩放比例 : </el-text>
+                </div>
+                <div class="item-content">
+                    <el-button @click="WIDTH_dateColumn -= 1" icon="Minus" text></el-button>
+                    <el-slider v-model="WIDTH_dateColumn" :step="1" :max="60" :min="20" style="width: 200px;" />
+                    <el-button @click="WIDTH_dateColumn += 1" icon="Plus" text></el-button>
+                </div>
             </div>
 
+            <div class="cont-item">
+                <div class="item-title">
+                    <el-text size="large">注释 : </el-text>
+                </div>
+                <div class="item-content">
+                    <el-button class="example-btn" type="warning" plain>
+                        记录中
+                    </el-button>
+                    <el-button class="example-btn" type="primary" plain>
+                        待结算
+                    </el-button>
+                    <el-button class="example-btn" type="info" plain>
+                        已结算
+                    </el-button>
+                </div>
+            </div>
 
-            <div>
-                <!-- 上一月 -->
-                <el-button @click="ACT_preMonth">上一月</el-button>
-                <el-date-picker v-model="currentMonth" type="month" placeholder="选择月份" :clearable="false">
-                </el-date-picker>
-                <!-- 下一月 -->
-                <el-button @click="ACT_nextMonth">下一月</el-button>
+            <div class="cont-item">
+                <div class="item-title">
+                    <el-text size="large">月份 : </el-text>
+                </div>
+                <div class="item-content">
+                    <!-- 上一月 -->
+                    <el-button @click="ACT_preMonth">上一月</el-button>
+                    <el-date-picker v-model="currentMonth" type="month" placeholder="选择月份" :clearable="false"
+                        :disabled-date="(date) => (date <= new Date('2025-01-01')) || (date > new Date()) ">
+                    </el-date-picker>
+                    <!-- 下一月 -->
+                    <el-button @click="ACT_nextMonth">下一月</el-button>
+                </div>
             </div>
         </div>
-        {{ currentMonth }}
 
 
         <!-- 工资表格 -->
-        <el-table :data="LIST_workerAndAttendance" style="width: 100%" row-key="id" height="600">
+        <el-table :data="FLDLIST_workerAndAttendance" style="width: 100%" row-key="id" height="600">
             <!-- 固定姓名列 -->
             <el-table-column prop="personName" label="姓名" width="100" fixed></el-table-column>
 
             <!-- 动态日期列 -->
-            <el-table-column v-for="(date, index) in dateColumns" :key="index" :label="date.day"
-                :width="WIDTH_dateColumn" align="center">
+            <el-table-column v-for="(date, index) in dateColumns" :key="date.date" :label="date.day"
+                :width="WIDTH_dateColumn" align="center"
+                :class-name="(date.date == editDate) ? 'editDateColumn' : (date.date > $Com.getYMD()) ? 'unArriveDateColumn' : ''"
+                :label-class-name="(date.date == editDate) ? 'editDateColumn' : (date.date > $Com.getYMD()) ? 'unArriveDateColumn' : ''">
 
                 <template #header>
-                    <div class="date-column-header">
+                    <div class="date-column-header"
+                        @dblclick="editDate = (date.date <= $Com.getYMD()) ? date.date : $Com.getYMD()">
                         <div>{{ date.day }}</div>
                         <div>{{ date.weekName }}</div>
                     </div>
                 </template>
 
                 <template #default="{ row }">
-                    <div v-if="row[date.date]">
-                        {{ (row[date.date].morningPay | 0) + (row[date.date].afternoonPay | 0) }}
+                    <div v-if="date.date > $Com.getYMD()"></div>
+                    <div v-else>
+                        <div v-if="row[date.date]">
+                            <div v-if="row[date.date].tradeStatus === '已结算'">
+                                <el-button class="abcd" type="info" plain :disabled="date.date != editDate"
+                                    @dblclick="ACT_ViewAttendance(row, row[date.date])">
+                                    {{ row[date.date].dayPay }}
+                                </el-button>
+                            </div>
+                            <div v-if="row[date.date].tradeStatus === '待结算'">
+                                <el-button class="abcd" type="primary" plain :disabled="date.date != editDate"
+                                    @dblclick="(date.date != editDate) ? ACT_ViewAttendance(row, row[date.date]) : ACT_EditAttendance(row, row[date.date])">
+                                    {{ row[date.date].dayPay }}
+                                </el-button>
+                            </div>
+                            <div v-if="row[date.date].tradeStatus === '记录中'">
+                                <el-button class="abcd" type="warning" plain :disabled="date.date != editDate"
+                                    @dblclick="(date.date != editDate) ? ACT_ViewAttendance(row, row[date.date]) : ACT_EditAttendance(row, row[date.date])">
+                                    {{ row[date.date].dayPay }}
+                                </el-button>
+                            </div>
+                        </div>
+                        <el-button class="abcd" plain v-else :disabled="date.date != editDate"
+                            @dblclick="(date.date == editDate) && ACT_AddAttendance(row, date)">
+                            空
+                        </el-button>
                     </div>
-                    <!-- 一个悬浮的正方形 -->
-                    <!-- <div class="square" v-else></div> -->
-                    <!-- <button class="convex-button" v-else>空</button> -->
-                    <el-button class="abcd" v-else @click="ACT_AddAttendance(row, date)">空</el-button>
-
                 </template>
 
             </el-table-column>
 
             <!-- 总计列 -->
-            <el-table-column label="总计" width="120" fixed="right">
+            <el-table-column label="总计" width="100" fixed="right">
                 <template #default="{ row }">
                     {{ calculateTotal(row) }}
                 </template>
             </el-table-column>
         </el-table>
-        {{ LIST_workerAndAttendance }}
+        FLDLIST_workerAndAttendance {{ FLDLIST_workerAndAttendance }}
         <br>
         dateColumns: {{ dateColumns }}
         <br>
@@ -328,53 +432,57 @@ const SBM_saveAttendance = () => {
 
     <!-- 出工记录表单对话框 -->
     <el-dialog :title="TT_attendance" v-model="SHOW_attendance" width="50%">
-        <el-form ref="FORM_attendance" :model="FD_attendance" label-width="80px" style="padding: 40px 50px 20px 20px;"
-            :rules="rules">
-            <el-row>
-                <el-form-item label="工人名称" prop="personName" v-inline-flex="50" required>
-                    <el-input v-model="FD_attendance.personName" disabled></el-input>
-                </el-form-item>
-                <el-form-item label="手机号" prop="phoneNum" v-inline-flex="50" required>
-                    <el-input v-model="FD_attendance.phoneNum" disabled></el-input>
-                </el-form-item>
-            </el-row>
-            <el-form-item label="日期" prop="date" v-inline-flex="50" required>
-                <el-input v-model="FD_attendance.date" disabled></el-input>
-            </el-form-item>
-            <el-row>
-                <el-form-item label="上午出工" prop="morningYn" v-inline-flex="50">
-                    <el-radio-group v-model="FD_attendance.morningYn">
-                        <el-radio-button v-for="(value, key) in OPT_YN" :key="key" :label="value" :value="key" />
-                    </el-radio-group>
-                </el-form-item>
-                <el-form-item label="上午工钱" prop="morningPay" v-if="FD_attendance.morningYn == 'Y'" v-inline-flex="50">
-                    <el-input v-model="FD_attendance.morningPay" v-input-int="1"></el-input>
-                </el-form-item>
-            </el-row>
+        <div style="padding: 10px 50px 20px 20px;">
+            <div style="font-size: 40px; font-weight: bold; text-align: center;">
+                {{ FD_attendance.date }}
+            </div>
 
-            <el-row>
-                <el-form-item label="下午出工" prop="afternoonYn" v-inline-flex="50">
-                    <el-radio-group v-model="FD_attendance.afternoonYn">
-                        <el-radio-button v-for="(value, key) in OPT_YN" :key="key" :label="value" :value="key" />
-                    </el-radio-group>
+            <el-form ref="FORM_attendance" :model="FD_attendance" label-width="80px"
+                style="padding: 40px 50px 20px 20px;" :rules="rules" :disabled="TT_attendance == '查看出工记录'">
+                <el-row>
+                    <el-form-item label="工人名称" prop="personName" v-inline-flex="50" required>
+                        <el-input v-model="FD_attendance.personName" disabled></el-input>
+                    </el-form-item>
+                    <el-form-item label="手机号" prop="phoneNum" v-inline-flex="50" required>
+                        <el-input v-model="FD_attendance.phoneNum" disabled></el-input>
+                    </el-form-item>
+                </el-row>
+                <el-row>
+                    <el-form-item label="上午出工" prop="morningYn" v-inline-flex="50">
+                        <el-radio-group v-model="FD_attendance.morningYn">
+                            <el-radio-button v-for="(value, key) in OPT_YN" :key="key" :label="value" :value="key" />
+                        </el-radio-group>
+                    </el-form-item>
+                    <el-form-item label="上午工钱" prop="morningPay" v-if="FD_attendance.morningYn == 'Y'"
+                        v-inline-flex="50">
+                        <el-input v-model="FD_attendance.morningPay" v-input-int="1"></el-input>
+                    </el-form-item>
+                </el-row>
+
+                <el-row>
+                    <el-form-item label="下午出工" prop="afternoonYn" v-inline-flex="50">
+                        <el-radio-group v-model="FD_attendance.afternoonYn">
+                            <el-radio-button v-for="(value, key) in OPT_YN" :key="key" :label="value" :value="key" />
+                        </el-radio-group>
+                    </el-form-item>
+                    <el-form-item label="下午工钱" prop="afternoonPay" v-if="FD_attendance.afternoonYn == 'Y'"
+                        v-inline-flex="50">
+                        <el-input v-model="FD_attendance.afternoonPay" v-input-int="1"></el-input>
+                    </el-form-item>
+                </el-row>
+
+                <el-form-item label="备注" prop="remark">
+                    <el-input v-model="FD_attendance.remark" type="textarea" :autosize="{ minRows: 2 }"></el-input>
                 </el-form-item>
-                <el-form-item label="下午工钱" prop="afternoonPay" v-if="FD_attendance.afternoonYn == 'Y'"
-                    v-inline-flex="50">
-                    <el-input v-model="FD_attendance.afternoonPay" v-input-int="1"></el-input>
-                </el-form-item>
-            </el-row>
-
-            <el-form-item label="备注" prop="remark">
-                <el-input v-model="FD_attendance.remark" type="textarea" :autosize="{ minRows: 2 }"></el-input>
-            </el-form-item>
 
 
-        </el-form>
+            </el-form>
+        </div>
+
         <template #footer>
-            <el-button @click="SHOW_attendance = false">取消</el-button>
-            <el-button type="primary" @click="SBM_saveAttendance">提交</el-button>
+            <el-button @click="SHOW_attendance = false">{{ TT_attendance != '查看出工记录' ? '取消' : '关闭' }}</el-button>
+            <el-button type="primary" @click="SBM_saveAttendance" v-if="TT_attendance != '查看出工记录'">提交</el-button>
         </template>
-        {{ FD_attendance }}
     </el-dialog>
 
 </template>
@@ -416,6 +524,10 @@ const SBM_saveAttendance = () => {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    // 鼠标样式
+    cursor: pointer;
+    // 文本不可选
+    -webkit-user-select: none;
 }
 
 
@@ -476,6 +588,68 @@ const SBM_saveAttendance = () => {
         display: flex;
         align-items: center;
         justify-content: center;
+    }
+
+    .abcd.is-disabled {
+        // pointer-events: none;
+        /* 彻底禁用所有指针事件 */
+    }
+}
+
+:deep().el-table__body {
+    .editDateColumn {
+        background-color: #d9ecff;
+    }
+
+    .unArriveDateColumn {
+        background-color: #f9f9fb;
+    }
+
+    tr.hover-row {
+        td.editDateColumn {
+            background-color: #d9ecff;
+        }
+    }
+}
+
+:deep().el-table__header {
+    .editDateColumn {
+        background-color: #409eff;
+        color: white;
+        border-radius: 7px;
+        box-shadow: var(--el-box-shadow);
+    }
+
+    .unArriveDateColumn {
+        background-color: #fafcfe;
+        color: #d0d3d9;
+    }
+}
+
+.controller {
+    display: flex;
+    justify-content: space-between;
+    padding: 0px 20px 25px;
+
+    .cont-item {
+        border: 2px solid #a0cfff;
+        border-radius: 12px;
+
+        .item-title {
+            border-bottom: 1px solid #a0cfff;
+            padding: 5px 10px;
+        }
+
+        .item-content {
+            display: flex;
+            align-items: center;
+            padding: 5px 10px;
+
+            .example-btn {
+                pointer-events: none;
+            }
+        }
+
     }
 }
 </style>
