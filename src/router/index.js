@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from "vue-router";
+import { createRouter, createWebHistory, createWebHashHistory } from "vue-router";
 import { useLoginUserStore } from "@/stores/loginUser";
 
 import CornGrainPurchaseVue from "@/views/Grain/CornGrainPurchase.vue"
@@ -92,7 +92,7 @@ const routes = [
 ];
 
 const router = createRouter({
-    history: createWebHistory(),
+    history: createWebHashHistory(),
     routes: routes
 })
 

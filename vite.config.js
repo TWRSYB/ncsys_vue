@@ -9,6 +9,11 @@ import ElementPlus from 'unplugin-element-plus/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+    // base: '/', // 默认使用绝对路径, 默认使用 /,
+    base: '', // 此处使用相对路径, Springboot配置了context-path之后必须使用相对路径, 否则打包后不能访问
+    // build: {
+    //     assetsDir: './assets' // 相对路径资源, 使用默认就可
+    // },
     plugins: [
         vue(),
         vueDevTools(),
