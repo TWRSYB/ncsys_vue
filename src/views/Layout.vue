@@ -51,6 +51,12 @@ const nongziMenuItems = [
     { path: '/Nongzi/NongziSell', title: '农资销售', icon: 'SVG_NongziSell', allowedRoles: ['sysAdmin', 'manager', 'operator'] },
 ]
 
+// 工人管理菜单
+const workerMenuItems = [
+    { path: '/Worker/WorkerAttendance', title: '出工记录', icon: 'SVG_Attendance', allowedRoles: ['sysAdmin', 'manager'] },
+    { path: '/Worker/WageSettle', title: '工钱结算', icon: 'SVG_WageSettle', allowedRoles: ['sysAdmin', 'manager'] },
+]
+
 // 数据维护菜单
 const dataMaintainMenuItems = [
     { path: '/Person/PersonInfo', title: '人员信息', icon: 'SVG_PersonInfo', allowedRoles: ['sysAdmin', 'manager'] },
@@ -85,7 +91,8 @@ const dataMaintainMenuItems = [
                         <span>系统设计</span>
                     </template>
                     <template v-for="menu in sysMenuItems" :key="menu.path">
-                        <el-menu-item :index="menu.path" v-if="menu.allowedRoles.includes(loginUserStore.loginUser.roleCode)">
+                        <el-menu-item :index="menu.path"
+                            v-if="menu.allowedRoles.includes(loginUserStore.loginUser.roleCode)">
                             <el-icon>
                                 <component :is="menu.icon" />
                             </el-icon>
@@ -93,8 +100,8 @@ const dataMaintainMenuItems = [
                         </el-menu-item>
                     </template>
                 </el-sub-menu>
-
-                <el-sub-menu v-if="['sysAdmin', 'manager', 'operator'].includes(loginUserStore.loginUser.roleCode)" index="2">
+                <el-sub-menu v-if="['sysAdmin', 'manager', 'operator'].includes(loginUserStore.loginUser.roleCode)"
+                    index="2">
                     <template #title>
                         <el-icon>
                             <SVG_GrainTrade />
@@ -102,7 +109,8 @@ const dataMaintainMenuItems = [
                         <span>粮食买卖</span>
                     </template>
                     <template v-for="menu in grainMenuItems" :key="menu.path">
-                        <el-menu-item :index="menu.path" v-if="menu.allowedRoles.includes(loginUserStore.loginUser.roleCode)">
+                        <el-menu-item :index="menu.path"
+                            v-if="menu.allowedRoles.includes(loginUserStore.loginUser.roleCode)">
                             <el-icon>
                                 <component :is="menu.icon" />
                             </el-icon>
@@ -111,7 +119,8 @@ const dataMaintainMenuItems = [
                     </template>
                 </el-sub-menu>
 
-                <el-sub-menu v-if="['sysAdmin', 'manager', 'operator'].includes(loginUserStore.loginUser.roleCode)" index="3">
+                <el-sub-menu v-if="['sysAdmin', 'manager', 'operator'].includes(loginUserStore.loginUser.roleCode)"
+                    index="3">
                     <template #title>
                         <el-icon>
                             <SVG_NongziTrade />
@@ -119,7 +128,8 @@ const dataMaintainMenuItems = [
                         <span>农资交易</span>
                     </template>
                     <template v-for="menu in nongziMenuItems" :key="menu.path">
-                        <el-menu-item :index="menu.path" v-if="menu.allowedRoles.includes(loginUserStore.loginUser.roleCode)">
+                        <el-menu-item :index="menu.path"
+                            v-if="menu.allowedRoles.includes(loginUserStore.loginUser.roleCode)">
                             <el-icon>
                                 <component :is="menu.icon" />
                             </el-icon>
@@ -127,15 +137,26 @@ const dataMaintainMenuItems = [
                         </el-menu-item>
                     </template>
                 </el-sub-menu>
-                <el-menu-item v-if="['sysAdmin', 'manager'].includes(loginUserStore.loginUser.roleCode)"
-                    index="/Worker/WorkerAttendance">
-                    <el-icon>
-                        <SVG_Attendance />
-                    </el-icon>
-                    <template #title>工人出工</template>
-                </el-menu-item>
-                <el-menu-item v-if="['sysAdmin', 'manager', 'operator'].includes(loginUserStore.loginUser.roleCode)" index="5"
-                    disabled>
+                <el-sub-menu v-if="['sysAdmin', 'manager', 'operator'].includes(loginUserStore.loginUser.roleCode)"
+                    index="4">
+                    <template #title>
+                        <el-icon>
+                            <SVG_Worker />
+                        </el-icon>
+                        <span>工人管理</span>
+                    </template>
+                    <template v-for="menu in workerMenuItems" :key="menu.path">
+                        <el-menu-item :index="menu.path"
+                            v-if="menu.allowedRoles.includes(loginUserStore.loginUser.roleCode)">
+                            <el-icon>
+                                <component :is="menu.icon" />
+                            </el-icon>
+                            <span>{{ menu.title }}</span>
+                        </el-menu-item>
+                    </template>
+                </el-sub-menu>
+                <el-menu-item v-if="['sysAdmin', 'manager', 'operator'].includes(loginUserStore.loginUser.roleCode)"
+                    index="5" disabled>
                     <el-icon>
                         <SVG_Farm />
                     </el-icon>
@@ -149,7 +170,8 @@ const dataMaintainMenuItems = [
                         <span>信息维护</span>
                     </template>
                     <template v-for="menu in dataMaintainMenuItems" :key="menu.path">
-                        <el-menu-item :index="menu.path" v-if="menu.allowedRoles.includes(loginUserStore.loginUser.roleCode)">
+                        <el-menu-item :index="menu.path"
+                            v-if="menu.allowedRoles.includes(loginUserStore.loginUser.roleCode)">
                             <el-icon>
                                 <component :is="menu.icon" />
                             </el-icon>
@@ -166,7 +188,8 @@ const dataMaintainMenuItems = [
         <el-container>
             <!-- 头部区域 -->
             <el-header>
-                <div>{{ OPT_roleCode[loginUserStore.loginUser.roleCode] }}：<strong>{{ loginUserStore.loginUser.userName }}</strong>
+                <div>{{ OPT_roleCode[loginUserStore.loginUser.roleCode] }}：<strong>{{ loginUserStore.loginUser.userName
+                        }}</strong>
                 </div>
                 <el-dropdown placement="bottom-end">
                     <span class="el-dropdown__box">

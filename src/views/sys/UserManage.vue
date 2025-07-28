@@ -172,9 +172,6 @@ const showPassword = ref(false)
                 <el-empty description="没有数据" />
             </template>
         </el-table>
-        {{ TDS_User }}
-        <br />
-        {{ OPT_roleCode }}
         <!-- 分页条 -->
         <!-- <el-pagination v-model:current-page="pageNum" v-model:page-size="pageSize" :page-sizes="[3, 5, 10, 15]"
             layout="jumper, total, sizes, prev, pager, next" background :total="total" @size-change="onSizeChange"
@@ -220,7 +217,6 @@ const showPassword = ref(false)
                     <el-button type="primary" @click="SBM_addUser('已发布')">新增</el-button>
                 </div>
             </template>
-            {{ FD_user }}
         </el-drawer>
     </el-card>
 </template>

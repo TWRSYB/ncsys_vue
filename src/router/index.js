@@ -61,11 +61,19 @@ const routes = [
                 meta: { requiresAuth: true, roles: ['sysAdmin', 'manager', 'operator'] },
             },
             // 工人管理
+            // 出工记录
             {
                 path: '/Worker/WorkerAttendance',
                 component: WorkerAttendanceVue,
                 meta: { requiresAuth: true, roles: ['sysAdmin', 'manager'] },
             },
+            // 工钱结算
+            {
+                path: '/Worker/WageSettle',
+                component: () => import('@/views/Worker/WageSettle.vue'),
+                meta: { requiresAuth: true, roles: ['sysAdmin', 'manager'] },
+            },
+
             // 信息维护
             // 人员信息
             {
