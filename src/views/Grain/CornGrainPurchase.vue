@@ -915,7 +915,6 @@ const ACT_deleteTrade = (trade) => {
                     </div>
                 </div>
             </template>
-            {{ TDS_CornGrainPurchase }}
         </el-drawer>
     </el-card>
     <el-dialog v-model="SHOW_Settle" :title="TT_Settle" width="1200">

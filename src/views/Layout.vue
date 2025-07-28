@@ -187,9 +187,12 @@ const dataMaintainMenuItems = [
         <!-- 右侧主区域 -->
         <el-container>
             <!-- 头部区域 -->
-            <el-header>
-                <div>{{ OPT_roleCode[loginUserStore.loginUser.roleCode] }}：<strong>{{ loginUserStore.loginUser.userName
-                        }}</strong>
+            <el-header class="left-header">
+                <div>
+                    {{ OPT_roleCode[loginUserStore.loginUser.roleCode] }}：
+                    <strong>
+                        {{ loginUserStore.loginUser.userName }}
+                    </strong>
                 </div>
                 <el-dropdown placement="bottom-end">
                     <span class="el-dropdown__box">
@@ -199,7 +202,7 @@ const dataMaintainMenuItems = [
                         </el-icon>
                     </span>
                     <template #dropdown>
-                        <el-dropdown-menu>
+                        <el-dropdown-menu class="user-dropdown">
                             <el-dropdown-item command="userInfo" icon="User" @click="router.push('/User/UserInfo')"
                                 v-if="['sysAdmin', 'manager'].includes(loginUserStore.loginUser.roleCode)">
                                 用户信息
@@ -244,7 +247,13 @@ const dataMaintainMenuItems = [
         .el-menu-vertical-demo {
             height: 100%;
         }
+
+        // 文本不可选
+        user-select: none;
+        -webkit-user-select: none;
     }
+
+
 
 
     .el-header {
@@ -276,5 +285,15 @@ const dataMaintainMenuItems = [
         font-size: 14px;
         color: #666;
     }
+}
+
+.left-header {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.user-dropdown {
+    user-select: none !important;
+    -webkit-user-select: none !important;
 }
 </style>
