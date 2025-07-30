@@ -167,6 +167,23 @@ class ComUtils {
         return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
     }
 
+    /**
+     * 判断字符串是否是合法日期
+     * @param {String} str
+     * @returns {boolean} 如果字符串是合法日期格式yyyy-MM-dd，则返回true，否则返回false
+     */
+    isDateStr = (str) => { 
+        if (!str) return false
+        if (typeof str !== 'string') return false
+        if (str.length !== 10) return false
+        if (str.indexOf('-') === -1) return false
+        const [year, month, day] = str.split('-')
+        if (!year || !month || !day) return false
+        // 转换日期
+        const date = new Date(year, month - 1, day)
+        return date.getFullYear() === Number(year) && date.getMonth() + 1 === Number(month) && date.getDate() === Number(day)
+    }
+
 }
 
 // 创建实例（根据环境配置）
