@@ -528,15 +528,15 @@ const INIT_settle = () => {
         premium: 0, // 补价
         clearingAmount: 0, // 结算金额
         remark: '', // 备注
-        LIST_settleAttendance: [], // 结算考勤列表
-        LIST_settleYmd: [], // 涉及日期列表
+        list_settleAttendance: [], // 结算考勤列表
+        list_settleYmd: [], // 涉及日期列表
     }
 };
 
 const ACT_ToSettle2 = () => {
 
-    const LIST_settleAttendance = [];
-    const LIST_settleYmd = [];
+    const list_settleAttendance = [];
+    const list_settleYmd = [];
 
 
     for (let ym in Map_workerYmAttendance.value) {
@@ -545,25 +545,25 @@ const ACT_ToSettle2 = () => {
             if ($Com.isDateStr(ymd)) {
                 const attendance = attendanceMap[ymd]
                 if (attendance.tradeStatus == '待结算' && attendance.selected) {
-                    LIST_settleAttendance.push(attendance)
-                    LIST_settleYmd.push(ymd)
+                    list_settleAttendance.push(attendance)
+                    list_settleYmd.push(ymd)
                 }
             }
         }
     }
 
-    if (LIST_settleYmd.length == 0) {
+    if (list_settleYmd.length == 0) {
         return ElMessage.warning('请选择待结算数据')
     }
 
 
     // 获取结算日期中的最大值和最小值
-    let minOfRange = LIST_settleYmd[0];
-    let maxOfRange = LIST_settleYmd[0];
+    let minOfRange = list_settleYmd[0];
+    let maxOfRange = list_settleYmd[0];
 
-    for (let i = 1; i < LIST_settleYmd.length; i++) {
-        if (LIST_settleYmd[i] < minOfRange) minOfRange = LIST_settleYmd[i];
-        if (LIST_settleYmd[i] > maxOfRange) maxOfRange = LIST_settleYmd[i];
+    for (let i = 1; i < list_settleYmd.length; i++) {
+        if (list_settleYmd[i] < minOfRange) minOfRange = list_settleYmd[i];
+        if (list_settleYmd[i] > maxOfRange) maxOfRange = list_settleYmd[i];
     }
 
     // 区间不能有记录中或未选中的待结算数据
@@ -599,13 +599,13 @@ const ACT_ToSettle2 = () => {
     FD_Settle.value.personName = FD_settleWorker.value.personName;
     FD_Settle.value.phoneNum = FD_settleWorker.value.phoneNum;
     FD_Settle.value.clearDate = $Com.getYMD();
-    FD_Settle.value.LIST_settleAttendance = LIST_settleAttendance;
-    FD_Settle.value.LIST_settleYmd = LIST_settleYmd;
+    FD_Settle.value.list_settleAttendance = list_settleAttendance;
+    FD_Settle.value.list_settleYmd = list_settleYmd;
 
-    FD_Settle.value.involveDayList = LIST_settleYmd.join(',');
+    FD_Settle.value.involveDayList = list_settleYmd.join(',');
     // 计算涉及的天数
     let involveDays = 0;
-    LIST_settleAttendance.forEach(attendance => {
+    list_settleAttendance.forEach(attendance => {
         if (attendance.morningYn) {
             involveDays += 0.5
         }
@@ -616,7 +616,7 @@ const ACT_ToSettle2 = () => {
     FD_Settle.value.involveDays = involveDays;
     // 计算涉及金额
     let involvePay = 0;
-    LIST_settleAttendance.forEach(attendance => {
+    list_settleAttendance.forEach(attendance => {
         if (attendance.morningYn) {
             involvePay += Number(attendance.morningPay)
         }

@@ -85,8 +85,8 @@ const FD_user = ref({
 //定义表单校验规则
 const rules = {
     loginCode: [
-        { required: true, message: '请输入登录码, 8-10位数字字母组成', trigger: 'blur' },
-        { min: 8, max: 10, message: '长度为8~10位', trigger: 'change' },
+        { required: true, message: '请输入登录码, 8位数字字母组成', trigger: 'blur' },
+        { min: 8, max: 8, message: '长度8位', trigger: 'change' },
         // 必需同时包含数字和字母
         { pattern: /^(?=.*[0-9])(?=.*[a-zA-Z])[0-9a-zA-Z]+$/, message: '登录码必须包含数字和字母', trigger: 'blur' }
     ],
@@ -183,7 +183,7 @@ const showPassword = ref(false)
             <el-form ref="FORM_user" :model="FD_user" label-width="100px" :rules="rules">
                 <el-form-item label="登录码" prop="loginCode">
                     <el-input v-model="FD_user.loginCode" placeholder="登录码"
-                        v-input-filter="{ regex: /[^0-9a-zA-Z]/g, maxLength: 10 }" v-input-en-only></el-input>
+                        v-input-filter="{ regex: /[^0-9a-zA-Z]/g, maxLength: 8 }" v-input-en-only></el-input>
                 </el-form-item>
                 <el-form-item label="初始密码" prop="loginPassword">
                     <el-input v-model="FD_user.loginPassword" placeholder="初始密码"
