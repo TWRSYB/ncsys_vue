@@ -1,6 +1,7 @@
 <script setup>
 
 import { useLoginUserStore } from '@/stores/loginUser'
+import ClampedText from '@/components/ClampedText.vue'
 const loginUserStore = useLoginUserStore()
 
 const SHOW_workerFilter = ref(false)
@@ -425,24 +426,62 @@ const printConfig = {
                     <div v-if="date.date > $Com.getYMD()"></div>
                     <div v-else>
                         <div v-if="row[date.date]">
-                            <div v-if="row[date.date].tradeStatus === '已结算'">
-                                <el-button class="abcd" type="info" plain :disabled="date.date != editDate"
-                                    @dblclick="ACT_ViewAttendance(row, row[date.date])">
-                                    {{ row[date.date].dayPay }}
-                                </el-button>
-                            </div>
-                            <div v-if="row[date.date].tradeStatus === '待结算'">
-                                <el-button class="abcd" type="primary" plain :disabled="date.date != editDate"
-                                    @dblclick="(date.date != editDate) ? ACT_ViewAttendance(row, row[date.date]) : ACT_EditAttendance(row, row[date.date])">
-                                    {{ row[date.date].dayPay }}
-                                </el-button>
-                            </div>
-                            <div v-if="row[date.date].tradeStatus === '记录中'">
-                                <el-button class="abcd" type="warning" plain :disabled="date.date != editDate"
-                                    @dblclick="(date.date != editDate) ? ACT_ViewAttendance(row, row[date.date]) : ACT_EditAttendance(row, row[date.date])">
-                                    {{ row[date.date].dayPay }}
-                                </el-button>
-                            </div>
+                            <el-tooltip placement="bottom" effect="light" popper-class="attendance-tooltip"
+                                :show-after="1000">
+                                <div v-if="row[date.date].tradeStatus === '已结算'">
+                                    <el-button class="abcd" type="info" plain disabled>
+                                        {{ row[date.date].dayPay }}
+                                    </el-button>
+                                </div>
+                                <div v-if="row[date.date].tradeStatus === '待结算'">
+                                    <el-button class="abcd" type="primary" plain :disabled="date.date != editDate"
+                                        @dblclick="(date.date != editDate) ? '' : ACT_EditAttendance(row, row[date.date])">
+                                        {{ row[date.date].dayPay }}
+                                    </el-button>
+                                </div>
+                                <div v-if="row[date.date].tradeStatus === '记录中'">
+                                    <el-button class="abcd" type="warning" plain :disabled="date.date != editDate"
+                                        @dblclick="(date.date != editDate) ? '' : ACT_EditAttendance(row, row[date.date])">
+                                        {{ row[date.date].dayPay }}
+                                    </el-button>
+                                </div>
+                                <template #content>
+                                    <div class="attendance-card"
+                                        :style="{ color: row[date.date].tradeStatus == '已结算' ? '#909399' : row[date.date].tradeStatus == '待结算' ? '#409EFF' : '#E6A23C' }">
+                                        <div class="up">
+                                            <div>
+                                                {{ row[date.date].personName }}
+                                            </div>
+                                            <div>{{ date.date }}</div>
+                                        </div>
+                                        <div class="middle">
+                                            <div class="half">
+                                                <div class="half-name">上午:</div>
+                                                <div class="half-pay">
+                                                    <div v-if="row[date.date].morningYn == 'N'">未出工</div>
+                                                    <div v-else>
+                                                        {{ row[date.date].morningPay }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="half">
+                                                <div class="half-name">下午:</div>
+                                                <div class="half-pay">
+                                                    <div v-if="!row[date.date].afternoonYn">未记录</div>
+                                                    <div v-else-if="row[date.date].afternoonYn == 'N'">未出工</div>
+                                                    <div v-else>
+                                                        {{ row[date.date].afternoonPay }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="down">
+                                            <ClampedText :text="row[date.date].remark" />
+                                        </div>
+                                    </div>
+
+                                </template>
+                            </el-tooltip>
                         </div>
                         <el-button class="abcd" plain v-else :disabled="date.date != editDate"
                             @dblclick="(date.date == editDate) && ACT_AddAttendance(row, date)">
@@ -774,5 +813,40 @@ const printConfig = {
         }
 
     }
+}
+
+.attendance-tooltip {
+    .attendance-card {
+        width: 100px;
+        display: flex;
+        flex-direction: column;
+
+        .up {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .middle {
+            .half {
+                display: flex;
+
+                .half-name {
+                    width: 40px;
+                }
+            }
+        }
+
+        .down {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            /* 限制两行 */
+            line-clamp: 2;
+            /* 限制两行 */
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+
 }
 </style>

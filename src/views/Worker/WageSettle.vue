@@ -2,6 +2,7 @@
 
 import SVG_WageList from '@/components/svg/SVG_WageList.vue'
 import SVG_WageSettle from '@/components/svg/SVG_WageSettle.vue'
+import ClampedText from '@/components/ClampedText.vue'
 import { useLoginUserStore } from '@/stores/loginUser'
 const loginUserStore = useLoginUserStore()
 
@@ -845,30 +846,78 @@ watch(() => [FD_Settle.value.involvePay, FD_Settle.value.premium],
                         <div v-for="(day, index) in 31">
                             <div class="day" v-if="$Com.isDateStr(`${ym}-${String(day).padStart(2, '0')}`)">
                                 <div v-if="attendanceMap[`${ym}-${String(day).padStart(2, '0')}`]">
-                                    <div
-                                        v-if="attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].tradeStatus == '已结算'">
-                                        <el-button class="abcd" type="info" text disabled>
-                                            {{ attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].dayPay }}
-                                        </el-button>
-                                    </div>
-                                    <div
-                                        v-if="attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].tradeStatus == '记录中'">
-                                        <el-button class="abcd" :class="{
-                                            'warning': attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].warning
-                                        }" type="warning" style="color: #E6A23C" text disabled>
-                                            {{ attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].dayPay }}
-                                        </el-button>
-                                    </div>
-                                    <div
-                                        v-if="attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].tradeStatus == '待结算'">
-                                        <el-button class="abcd" :class="{
-                                            'warning': attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].warning
-                                        }" type="primary"
-                                            :text="!attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].selected"
-                                            @click="attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].selected = !attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].selected">
-                                            {{ attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].dayPay }}
-                                        </el-button>
-                                    </div>
+                                    <el-tooltip placement="bottom" effect="light" popper-class="attendance-tooltip"
+                                        :show-after="1000">
+                                        <div
+                                            v-if="attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].tradeStatus == '已结算'">
+                                            <el-button class="abcd" type="info" text disabled>
+                                                {{ attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].dayPay }}
+                                            </el-button>
+                                        </div>
+                                        <div
+                                            v-if="attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].tradeStatus == '记录中'">
+                                            <el-button class="abcd" :class="{
+                                                'warning': attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].warning
+                                            }" type="warning" style="color: #E6A23C" text disabled>
+                                                {{ attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].dayPay }}
+                                            </el-button>
+                                        </div>
+                                        <div
+                                            v-if="attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].tradeStatus == '待结算'">
+                                            <el-button class="abcd" :class="{
+                                                'warning': attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].warning
+                                            }" type="primary"
+                                                :text="!attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].selected"
+                                                @click="attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].selected = !attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].selected">
+                                                {{ attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].dayPay }}
+                                            </el-button>
+                                        </div>
+                                        <template #content>
+                                            <div class="attendance-card"
+                                                :style="{ color: attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].tradeStatus == '已结算' ? '#909399' : attendanceMap[`${ym}-${String(day).padStart(2, '0')}`].tradeStatus == '待结算' ? '#409EFF' : '#E6A23C' }">
+                                                <div class="up">
+                                                    <div>
+                                                        {{ attendanceMap[`${ym}-${String(day).padStart(2,
+                                                            '0')}`].personName }}
+                                                    </div>
+                                                    <div>{{ `${ym}-${String(day).padStart(2, '0')}` }}</div>
+                                                </div>
+                                                <div class="middle">
+                                                    <div class="half">
+                                                        <div class="half-name">上午:</div>
+                                                        <div class="half-pay">
+                                                            <div v-if="attendanceMap[`${ym}-${String(day).padStart(2,
+                                                                '0')}`].morningYn == 'N'">未出工</div>
+                                                            <div v-else>
+                                                                {{
+                                                                    attendanceMap[`${ym}-${String(day).padStart(2,
+                                                                        '0')}`].morningPay }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="half">
+                                                        <div class="half-name">下午:</div>
+                                                        <div class="half-pay">
+                                                            <div v-if="!attendanceMap[`${ym}-${String(day).padStart(2,
+                                                                '0')}`].afternoonYn">未记录</div>
+                                                            <div v-else-if="attendanceMap[`${ym}-${String(day).padStart(2,
+                                                                '0')}`].afternoonYn == 'N'">未出工</div>
+                                                            <div v-else>
+                                                                {{
+                                                                    attendanceMap[`${ym}-${String(day).padStart(2,
+                                                                        '0')}`].afternoonPay }}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="down">
+                                                    <ClampedText :text="attendanceMap[`${ym}-${String(day).padStart(2,
+                                                        '0')}`].remark" />
+                                                </div>
+                                            </div>
+
+                                        </template>
+                                    </el-tooltip>
                                 </div>
 
                                 <div v-else class="empty-day">无</div>
@@ -896,7 +945,7 @@ watch(() => [FD_Settle.value.involvePay, FD_Settle.value.premium],
                             <el-text type="primary" size="large">
                                 待结算
                             </el-text>
-                            <el-text size="large">
+                            <el-text type="info" size="large">
                                 已结算
                             </el-text>
                         </div>
@@ -934,7 +983,6 @@ watch(() => [FD_Settle.value.involvePay, FD_Settle.value.premium],
                     <el-input v-model="FD_Settle.remark" type="textarea" :autosize="{ minRows: 2 }"></el-input>
                 </el-form-item>
             </el-form>
-            {{ FD_Settle }}
             <template #footer>
                 <el-button @click="SHOW_Settle = false">取消</el-button>
                 <el-button type="primary" @click="SBM_Settle()">提交结算</el-button>
@@ -1012,5 +1060,42 @@ watch(() => [FD_Settle.value.involvePay, FD_Settle.value.premium],
     // box-shadow: 0px 0px 6px rgba(250, 43, 43, 0.12);
     box-shadow: 0 0 15px rgba(255, 50, 50, 0.4);
     // box-shadow: 0px 16px 48px 16px rgba(250, 43, 43, 0.08), 0px 12px 32px rgba(250, 43, 43, 0.12), 0px 8px 16px -8px rgba(250, 43, 43, 0.16);
+}
+
+
+
+.attendance-tooltip {
+    .attendance-card {
+        width: 100px;
+        display: flex;
+        flex-direction: column;
+
+        .up {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .middle {
+            .half {
+                display: flex;
+
+                .half-name {
+                    width: 40px;
+                }
+            }
+        }
+
+        .down {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            /* 限制两行 */
+            line-clamp: 2;
+            /* 限制两行 */
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    }
+
 }
 </style>
