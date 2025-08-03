@@ -106,13 +106,18 @@ const DEALED_TDS_CornGrainSell = computed(() => {
             columnName: 'buyerName',
             columnComment: '购买人',
             type: 'text'
+        },
+        {
+            columnName: 'dockPersonName',
+            columnComment: '对接人',
+            type: 'text'
         }
     ])
 
     // 字段排序
-    const orderedFields = ['serno', 'tradeDate', 'buyerType', 'buyerId', 'buyerName', 'qualityMouldRate',
+    const orderedFields = ['serno', 'tradeDate', 'buyerType', 'buyerId', 'buyerName', 'dockPersonName', 'qualityMouldRate',
         'qualityHumidity', 'impurity', 'clearingForm', 'planClearingDate', 'actualClearingDate', 'clearingAmount',
-        'unitPrice', 'totalWeight', 'totalPrice', 'premium', 'tradeStatus', 'remark',
+        'weighSide', 'unitPrice', 'totalWeight', 'totalPrice', 'premium', 'tradeStatus', 'remark',
         'dataStatus', 'createUser', 'createTime', 'updateUser', 'updateTime']
     // 根据用户角色过滤禁用字段
     let disabledFields = orderedFields
@@ -517,9 +522,6 @@ const ACT_detail = (row) => {
 }
 
 
-const SHOW_Settle = ref(false) // 控制结算对话框显示状态
-const TT_Settle = ref('结算') // 结算标题
-const FD_Settle = ref({}) // 结算表单数据
 const FORM_Settle = ref(null) // 交易表单
 const ACT_SettleTrade = (row) => {
     // 查询交易详情
@@ -531,16 +533,18 @@ const ACT_SettleTrade = (row) => {
                     return;
                 }
                 // 成功获取交易详情
-                SHOW_Settle.value = true
-                TT_Drawer.value = '结算'
+                SHOW_Drawer.value = true
+                TT_Drawer.value = '结算交易'
                 init_FD_Trade(); // 初始化表单数据
                 nextTick(() => {
                     // 重置表单数据
-                    FORM_Settle.value.resetFields();
+                    FORM_Trade.value.resetFields();
                     // 成功获取交易详情
-                    FD_Settle.value = response.data;
-                    FD_Settle.value.actualClearingDate = new Date().toISOString().slice(0, 10); // 设置实际结算日期为今天
+                    FD_Trade.value = response.data;
+                    FD_Trade.value.actualClearingDate = new Date().toISOString().slice(0, 10); // 设置实际结算日期为今天
+                    calculateTrade();
                 })
+
             }
         })
 }
@@ -554,8 +558,8 @@ const rules_settle = {
     ],
     totalPrice: [
         { required: true, message: '请输入总价', trigger: 'change' },
-        // 总价范围为0.01~100000
-        { validator: $VLD.doubleRange(0.01, 100000), trigger: 'blur' }
+        // 总价范围为0.01~1000000
+        { validator: $VLD.doubleRange(0.01, 1000000), trigger: 'blur' }
     ],
     planClearingDate: [
         { required: true, message: '请选择计划结算日期', trigger: 'change' }
@@ -565,20 +569,12 @@ const rules_settle = {
         { required: true, message: '请选择实际结算日期', trigger: 'change' }
     ],
     premium: [
-        { required: true, message: '请输入补价', trigger: 'change' },
-        { validator: $VLD.doubleRange(-2000, 2000), trigger: 'blur' }
+        { required: true, message: '请输入补价', trigger: 'blur' },
+        { validator: $VLD.doubleRange(-2000, 5000), trigger: 'blur' }
     ]
 }
 
-const calculateSettle = computed(() => {
-    // 计算结算金额
-    let { totalPrice, premium } = FD_Settle.value
-    if (totalPrice && premium) {
-        return { clearingAmount: (Number(totalPrice) + Number(premium)).toFixed(2) }
-    } else {
-        return { clearingAmount: Number(totalPrice) }
-    }
-})
+
 
 const SBM_Settle = () => {
     FORM_Settle.value.validate((valid, fields) => {
@@ -589,10 +585,10 @@ const SBM_Settle = () => {
         }
 
         // 补价绝对值超过总价的30%则阻止, 超过10%则弹窗确认
-        if (Math.abs(FD_Settle.value.premium) > FD_Settle.value.totalPrice * 0.3) {
+        if (Math.abs(FD_Trade.value.premium) > FD_Trade.value.totalPrice * 0.3) {
             ElMessage.warning('补价超过总价的30%, 若继续结算请联系系统管理员');
             return false;
-        } else if (Math.abs(FD_Settle.value.premium) > FD_Settle.value.totalPrice * 0.1) {
+        } else if (Math.abs(FD_Trade.value.premium) > FD_Trade.value.totalPrice * 0.1) {
             ElMessageBox.confirm('补价超过总价的10%, 是否继续结算？', '提示', {
                 confirmButtonText: '继续结算',
                 cancelButtonText: '取消结算',
@@ -612,13 +608,11 @@ const SBM_Settle = () => {
 }
 
 const settleTrade = () => {
-    // 计算结算金额
-    FD_Settle.value.clearingAmount = calculateSettle.value.clearingAmount;
     // 提交结算
-    $Requests.post('/cornGrainSell/settleTrade', FD_Settle.value, { showSuccessMsg: true })
+    $Requests.post('/cornGrainSell/settleTrade', FD_Trade.value, { showSuccessMsg: true })
         .then(response => {
             if (response.code === 200) {
-                SHOW_Settle.value = false;
+                SHOW_Drawer.value = false;
                 ACT_PageQuery();
             }
         })
@@ -730,10 +724,10 @@ const getCompanyAddressList = (queryString, cb) => {
     if (!likeCompanyList.value || likeCompanyList.value.length === 0) {
         return cb([])
     }
-    // 获取手机号对应人员的地址列表
+    // 获取电话对应公司的地址列表
     for (const company of likeCompanyList.value) {
         if (company.companyPhoneNum === FD_Trade.value.buyerCompany.companyPhoneNum) {
-            // 找到对应人员
+            // 找到对应公司
             const addressList = []
             for (const item of company.addressList) {
                 addressList.push({
@@ -747,6 +741,25 @@ const getCompanyAddressList = (queryString, cb) => {
     return cb([])
 }
 
+const getCompanyPersonList = (queryString, cb) => {
+    if (!likeCompanyList.value || likeCompanyList.value.length === 0) {
+        return cb([])
+    }
+    // 获取电话对应公司的对接人列表
+    for (const company of likeCompanyList.value) {
+        if (company.companyPhoneNum === FD_Trade.value.buyerCompany.companyPhoneNum) {
+            // 找到对应公司
+            return cb(company.personList)
+        }
+    }
+    return cb([])
+}
+
+const handleSelectCompanyPerson = (item) => {
+    FD_Trade.value.buyerCompany.dockPersonName = item.personName
+    FD_Trade.value.buyerCompany.dockPhoneNum = item.phoneNum
+}
+
 const ACT_deleteTrade = (trade) => {
     ElMessage.warning('删除交易功能暂未开放, 请联系管理员');
 }
@@ -758,6 +771,16 @@ const clearingFormChange = () => {
     }
 }
 
+const CCLT_clearingAmount = computed(() => {
+    // 计算结算金额
+    let { totalPrice, premium } = FD_Trade.value
+    if (totalPrice && (premium || premium === 0)) {
+        FD_Trade.value.clearingAmount = (Number(totalPrice) + Number(premium)).toFixed(2)
+    } else {
+        FD_Trade.value.clearingAmount = null
+    }
+    return FD_Trade.value.clearingAmount
+})
 
 
 
@@ -855,10 +878,12 @@ const clearingFormChange = () => {
             :total="QUERY_Main.total" :page-sizes="[10, 20, 50, 100]" @change="ACT_PageQuery"
             layout="jumper, total, sizes, prev, pager, next" />
 
+
+
         <!-- 新增 -->
         <el-drawer v-model="SHOW_Drawer" :title="TT_Drawer" direction="rtl" size="90%">
             <el-form ref="FORM_Trade" :model="FD_Trade" label-width="110px" :rules="rules"
-                :disabled="TT_Drawer == '交易详情'">
+                :disabled="['交易详情', '结算交易'].includes(TT_Drawer)">
                 <el-row>
                     <el-form-item label="交易日期" prop="tradeDate" v-inline-flex>
                         <el-date-picker v-model="FD_Trade.tradeDate" value-format="YYYY-MM-DD">
@@ -909,42 +934,55 @@ const clearingFormChange = () => {
                 </el-row>
 
 
-                <el-row v-if="TT_Drawer === '交易详情'">
+                <el-row v-if="['交易详情', '结算交易'].includes(TT_Drawer)">
                     <el-form-item label="总重量" prop="totalWeight" v-inline-flex>
-                        <el-input v-model="FD_Trade.totalWeight" v-input-double disabled>
+                        <el-input v-model="FD_Trade.totalWeight" v-input-double>
                             <template #append>kg</template>
                         </el-input>
                     </el-form-item>
                     <el-form-item label="总价" prop="totalPrice" v-inline-flex>
-                        <el-input v-model="FD_Trade.totalPrice" v-input-double disabled>
+                        <el-input v-model="FD_Trade.totalPrice" v-input-double>
                             <template #append>元</template>
                         </el-input>
                     </el-form-item>
-                    <el-form-item label="交易状态" prop="tradeStatus" v-inline-flex>
-                        <el-select v-model="FD_Trade.tradeStatus" clearable>
-                            <el-option v-for="(item) in OPT_tradeStatus" :key="item" :label="item"
-                                :value="item"></el-option>
-                        </el-select>
-                    </el-form-item>
-                </el-row>
-                <el-row v-if="TT_Drawer === '交易详情'">
-                    <el-form-item label="实际结算日期" prop="actualClearingDate" v-inline-flex>
-                        <el-date-picker v-model="FD_Trade.actualClearingDate" value-format="YYYY-MM-DD">
-                        </el-date-picker>
-                    </el-form-item>
-                    <el-form-item label="补价" prop="premium" v-inline-flex>
-                        <el-input v-model="FD_Trade.premium" v-input-double @paste.prevent>
-                            <template #append>元</template>
-                        </el-input>
-                    </el-form-item>
-                    <el-form-item label="实际结算金额" prop="clearingAmount">
-                        <el-input v-model="FD_Trade.clearingAmount"></el-input>
+                    <el-form-item label="交易状态" prop="tradeStatus" v-inline-flex="50">
+                        <el-radio-group v-model="FD_Trade.tradeStatus">
+                            <el-radio-button v-for="(item) in OPT_tradeStatus" :key="item" :label="item"
+                                :value="item"></el-radio-button>
+                        </el-radio-group>
                     </el-form-item>
                 </el-row>
 
 
+                <el-form ref="FORM_Settle" :model="FD_Trade" label-width="110px" :rules="rules_settle"
+                    v-if="['交易详情', '结算交易'].includes(TT_Drawer)">
+                    <el-row>
+                        <el-form-item label="实际结算日期" prop="actualClearingDate" v-inline-flex>
+                            <el-date-picker v-model="FD_Trade.actualClearingDate" value-format="YYYY-MM-DD"
+                                :disabled="['交易详情'].includes(TT_Drawer)"></el-date-picker>
+                        </el-form-item>
+                        <el-form-item label="补价" prop="premium" v-inline-flex>
+                            <el-input v-model="FD_Trade.premium" v-input-double="3"
+                                :disabled="['交易详情'].includes(TT_Drawer)">
+                                <template #append>元</template>
+                            </el-input>
+                        </el-form-item>
+                        <el-form-item label="实际结算金额" prop="clearingAmount" v-if="['结算交易'].includes(TT_Drawer)">
+                            <el-input :value="CCLT_clearingAmount" disabled></el-input>
+                        </el-form-item>
+                        <el-form-item label="实际结算金额" prop="clearingAmount" v-if="['交易详情'].includes(TT_Drawer)">
+                            <el-input v-model="FD_Trade.clearingAmount" disabled></el-input>
+                        </el-form-item>
 
-                <el-form-item label="备注" prop="remark">
+                    </el-row>
+
+                    <el-form-item label="备注" prop="remark">
+                        <el-input v-model="FD_Trade.remark" type="textarea"
+                            :disabled="['交易详情'].includes(TT_Drawer)"></el-input>
+                    </el-form-item>
+                </el-form>
+
+                <el-form-item label="备注" prop="remark" v-else>
                     <el-input v-model="FD_Trade.remark" type="textarea" autosize></el-input>
                 </el-form-item>
 
@@ -990,25 +1028,25 @@ const clearingFormChange = () => {
                 </template>
                 <template v-if="FD_Trade.buyerType === '企业'">
                     <el-form-item label="企业名称" prop="buyerCompany.companyName" v-inline-flex>
-                        <el-autocomplete v-model="FD_Trade.buyerCompany.companyName" placement="bottom-end"
+                        <el-autocomplete v-model="FD_Trade.buyerCompany.companyName" placement="bottom-start"
                             :fetch-suggestions="(queryString, cb) => getCompanyLike(queryString, cb, 'companyName')"
                             @select="handleSelectCompany" :trigger-on-focus="false" :hide-loading="true">
                             <template #default="{ item }">
                                 <div style="display: flex; width: 500px;">
-                                    <div style="width: 200px;">{{ item.companyPhoneNum }}</div>
                                     <div style="width: 200px;">{{ item.companyName }}</div>
+                                    <div style="width: 200px;">{{ item.companyPhoneNum }}</div>
                                 </div>
                             </template>
                         </el-autocomplete>
                     </el-form-item>
                     <el-form-item label="企业电话" prop="buyerCompany.companyPhoneNum" v-inline-flex>
-                        <el-autocomplete v-model="FD_Trade.buyerCompany.companyPhoneNum"
+                        <el-autocomplete v-model="FD_Trade.buyerCompany.companyPhoneNum" placement="bottom-end"
                             :fetch-suggestions="(queryString, cb) => getCompanyLike(queryString, cb, 'companyPhoneNum')"
                             @select="handleSelectCompany" :trigger-on-focus="false" :hide-loading="true">
                             <template #default="{ item }">
                                 <div style="display: flex; width: 500px;">
-                                    <div style="width: 200px;">{{ item.companyPhoneNum }}</div>
                                     <div style="width: 200px;">{{ item.companyName }}</div>
+                                    <div style="width: 200px;">{{ item.companyPhoneNum }}</div>
                                 </div>
                             </template>
                         </el-autocomplete>
@@ -1020,10 +1058,26 @@ const clearingFormChange = () => {
                     </el-form-item>
 
                     <el-form-item label="对接人" prop="buyerCompany.dockPersonName" v-inline-flex>
-                        <el-input v-model="FD_Trade.buyerCompany.dockPersonName"></el-input>
+                        <el-autocomplete v-model="FD_Trade.buyerCompany.dockPersonName"
+                            :fetch-suggestions="getCompanyPersonList" @select="handleSelectCompanyPerson">
+                            <template #default="{ item }">
+                                <div style="display: flex; width: 500px;">
+                                    <div style="width: 200px;">{{ item.personName }}</div>
+                                    <div style="width: 200px;">{{ item.phoneNum }}</div>
+                                </div>
+                            </template>
+                        </el-autocomplete>
                     </el-form-item>
                     <el-form-item label="对接人电话" prop="buyerCompany.dockPhoneNum" v-inline-flex>
-                        <el-input v-model="FD_Trade.buyerCompany.dockPhoneNum"></el-input>
+                        <el-autocomplete v-model="FD_Trade.buyerCompany.dockPhoneNum" placement="bottom-end"
+                            :fetch-suggestions="getCompanyPersonList" @select="handleSelectCompanyPerson">
+                            <template #default="{ item }">
+                                <div style="display: flex; width: 500px;">
+                                    <div style="width: 200px;">{{ item.personName }}</div>
+                                    <div style="width: 200px;">{{ item.phoneNum }}</div>
+                                </div>
+                            </template>
+                        </el-autocomplete>
                     </el-form-item>
                 </template>
 
@@ -1150,66 +1204,18 @@ const clearingFormChange = () => {
                         <span>总价:</span>&nbsp;<span>{{ calculateTrade2.totalPrice }}&nbsp;</span><span>元</span>
                     </div>
                     <div>
-                        <el-button type="primary" @click="SBM_saveTrade" v-if="TT_Drawer != '交易详情'">保存</el-button>
-                        <el-button type="primary" @click="SBM_sellComplete" v-if="TT_Drawer != '交易详情'">出售完成</el-button>
+                        <el-button type="primary" @click="SBM_saveTrade"
+                            v-if="['新增交易', '编辑交易'].includes(TT_Drawer)">保存</el-button>
+                        <el-button type="primary" @click="SBM_sellComplete"
+                            v-if="['新增交易', '编辑交易'].includes(TT_Drawer)">出售完成</el-button>
+                        <el-button type="primary" @click="SBM_Settle"
+                            v-if="['结算交易'].includes(TT_Drawer)">提交结算</el-button>
                     </div>
                 </div>
             </template>
         </el-drawer>
     </el-card>
-    <el-dialog v-model="SHOW_Settle" :title="TT_Settle" width="1200">
-        <el-form ref="FORM_Settle" :model="FD_Settle" label-width="110px" :rules="rules_settle">
-            <el-row>
-                <!-- 交易日期 -->
-                <el-form-item label="交易日期" prop="tradeDate" v-inline-flex>
-                    <el-date-picker v-model="FD_Settle.tradeDate" value-format="YYYY-MM-DD" disabled></el-date-picker>
-                </el-form-item>
-                <!-- 总重 -->
-                <el-form-item label="总重" prop="totalWeight" v-inline-flex>
-                    <el-input v-model="FD_Settle.totalWeight" disabled>
-                        <template #append>kg</template>
-                    </el-input>
-                </el-form-item>
-                <el-form-item label="总价" prop="totalPrice" v-inline-flex>
-                    <el-input v-model="FD_Settle.totalPrice" disabled>
-                        <template #append>元</template>
-                    </el-input>
-                </el-form-item>
-                <!-- 计划结算日期 -->
-                <el-form-item v-if="FD_Settle.clearingForm == '延结'" label="计划结算日期" prop="planClearingDate"
-                    v-inline-flex>
-                    <el-date-picker v-model="FD_Settle.planClearingDate" value-format="YYYY-MM-DD"
-                        disabled></el-date-picker>
-                </el-form-item>
-            </el-row>
 
-            <el-row>
-                <el-form-item label="实际结算日期" prop="actualClearingDate" v-inline-flex>
-                    <el-date-picker v-model="FD_Settle.actualClearingDate" value-format="YYYY-MM-DD"></el-date-picker>
-                </el-form-item>
-                <el-form-item label="补价" prop="premium" v-inline-flex>
-                    <el-input v-model="FD_Settle.premium" v-input-double="3">
-                        <template #append>元</template>
-                    </el-input>
-                </el-form-item>
-            </el-row>
-
-            <el-form-item label="备注" prop="remark">
-                <el-input v-model="FD_Settle.remark" type="textarea"></el-input>
-            </el-form-item>
-        </el-form>
-        <template #footer>
-            <div class="dialog-footer">
-                <div>
-                    <!-- 最终结算金额 -->
-                    <span>最终结算金额: {{ calculateSettle.clearingAmount }} 元</span>
-                </div>
-                <div>
-                    <el-button type="primary" @click="SBM_Settle">结算</el-button>
-                </div>
-            </div>
-        </template>
-    </el-dialog>
 </template>
 <style lang="scss" scoped>
 .dialog-footer {
