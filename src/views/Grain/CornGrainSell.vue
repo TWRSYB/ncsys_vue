@@ -782,6 +782,64 @@ const CCLT_clearingAmount = computed(() => {
     return FD_Trade.value.clearingAmount
 })
 
+const SHOW_print = ref(false);
+
+
+
+
+
+const printConfig = {
+    id: 'printArea',
+    popTitle: '玉米粒出售模板', // 空标题避免浏览器默认标题
+    originalTitle: document.title, // 保存原始标题
+    extraHead: ` 
+    <style>
+      /* 设置横向布局 */
+      @page {
+        size: A4; /* landscape 表示横向 */
+        margin: 0;
+      }
+      
+      body {
+        /* 横向尺寸：297mm宽 x 210mm高 */
+        width: 200mm !important;
+        max-width: 200mm !important;
+        min-width: 200mm !important;
+        height: 287mm !important;
+        max-height: 287mm !important;
+        min-height: 287mm !important;
+        padding: 5mm;
+        box-sizing: border-box; /* 确保padding不影响尺寸 */
+        font-size: 14px !important;
+      }
+
+        /* 强制打印背景色 */
+      * {
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+        
+      /* 隐藏不需要的元素 */
+      .no-print {
+        display: none !important;
+      }
+
+
+    </style>
+  `,
+    beforeOpenCallback: () => {
+        // console.log('开始打印前准备');
+        // 打印前修改页面标题（用于PDF文件名）
+        document.title = printConfig.popTitle;
+    },
+    closeCallback: () => {
+        // console.log('打印窗口已关闭');
+        // 打印后恢复原始标题
+        document.title = printConfig.originalTitle;
+    }
+};
 
 
 </script>
@@ -798,6 +856,7 @@ const CCLT_clearingAmount = computed(() => {
                 </div>
 
                 <div class="extra">
+                    <el-button type="success" @click="SHOW_print = true">模板打印</el-button>
                     <el-button type="primary" @click="ACT_SHOW_addTrade"
                         v-if="['sysAdmin', 'manager', 'operator'].includes(loginUserStore.loginUser.roleCode)">新增交易</el-button>
                 </div>
@@ -840,8 +899,6 @@ const CCLT_clearingAmount = computed(() => {
 
         <el-table :data="TD_List" style="width: 100%">
             <el-table-column type="index" width="60" />
-            <!-- <el-table-column label="交易日期" prop="tradeDate" width="120"></el-table-column>
-            <el-table-column label="购买人" prop="buyerName" width="120"></el-table-column> -->
             <el-table-column v-for="field in FLDTDS_CornGrainSell" :key="field.columnName" :label="field.columnComment"
                 :prop="field.columnName">
                 <template #default="{ row }" v-if="field.type == 'lv'">
@@ -1216,13 +1273,281 @@ const CCLT_clearingAmount = computed(() => {
         </el-drawer>
     </el-card>
 
+    <el-dialog v-model="SHOW_print" title="打印预览" width="70%" :show-close="false" top="0vh">
+        <template #header>
+            <div class="header"
+                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 12px;">
+                <div class="title">
+                    <el-text type="info" size="large" tag="b">
+                        打印预览
+                    </el-text>
+                </div>
+                <div class="extra">
+                    <el-button type="success" v-print="printConfig">打印</el-button>
+                    <el-button @click="SHOW_print = false">关闭</el-button>
+                </div>
+            </div>
+        </template>
+        <div id="printArea" class="print-paper">
+
+            <div class="biaoge">
+                <div class="biaoge-header">
+                    <div class="biaoge-title">玉米粒出售模板</div>
+                </div>
+                <div class="biaoge-contain">
+                    <div class="biaoge-row">
+                        <div class="biaoge-item">
+                            <div class="label">交易日期</div>
+                            <div class="default"></div>
+                        </div>
+                        <div class="biaoge-item">
+                            <div class="label">单价(元/斤)</div>
+                            <div class="default"></div>
+                        </div>
+                        <div class="biaoge-item">
+                            <div class="label">计划结算日期</div>
+                            <div class="default"></div>
+                        </div>
+                    </div>
+                    <div class="biaoge-row">
+                        <div class="biaoge-item">
+                            <div class="label">霉菌率</div>
+                            <div class="default"></div>
+                        </div>
+                        <div class="biaoge-item">
+                            <div class="label">湿度</div>
+                            <div class="default"></div>
+                        </div>
+                        <div class="biaoge-item">
+                            <div class="label">杂质</div>
+                            <div class="default">
+                                <el-radio-group v-model="FD_Trade.impurity">
+                                    <el-radio-button v-for="(item) in OPT_impurity" :key="item" :label="item"
+                                        :value="item"></el-radio-button>
+                                </el-radio-group>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="biaoge-row" style="height: 20mm;">
+                        <div class="biaoge-item">
+                            <div class="label">备注</div>
+                            <div class="default"></div>
+                        </div>
+                    </div>
+                    <el-divider content-position="left" style="margin-top: 50px;">购买人</el-divider>
+
+                    <div class="biaoge-row">
+                        <div class="biaoge-item">
+                            <div class="label">购买人</div>
+                            <div class="default"></div>
+                        </div>
+                        <div class="biaoge-item">
+                            <div class="label">电话</div>
+                            <div class="default"></div>
+                        </div>
+                        <div class="biaoge-item">
+                            <div class="label">地址</div>
+                            <div class="default"></div>
+                        </div>
+                    </div>
+                    <div class="biaoge-row">
+                        <div class="biaoge-item">
+                            <div class="label">对接人</div>
+                            <div class="default"></div>
+                        </div>
+                        <div class="biaoge-item">
+                            <div class="label">对接人电话</div>
+                            <div class="default"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <el-divider content-position="left" style="margin-top: 50px;">过磅记录</el-divider>
+
+            <div class="weigh-table">
+                <div class="table-row weigh-header">
+                    <div class="table-cell" style="width: 5mm;">序号</div>
+                    <div class="table-cell" style="width: 14mm;">承运方</div>
+                    <div class="table-cell">车牌号</div>
+                    <div class="table-cell">毛重(kg)</div>
+                    <div class="table-cell">皮重(kg)</div>
+                    <div class="table-cell">净重(kg)</div>
+                    <div class="table-cell">毛重(买方)</div>
+                    <div class="table-cell">皮重(买方)</div>
+                    <div class="table-cell">净重(买方)</div>
+                    <div class="table-cell">净重差异</div>
+                    <div class="table-cell">备注</div>
+                </div>
+                <div class="table-row" v-for="i in 10" :key="i">
+                    <div class="table-cell" style="width: 5mm;">{{ i }}</div>
+                    <div class="table-cell" style="width: 14mm; color: #7d8087">
+                        {{ OPT_carrier.join(' | ') }}
+                    </div>
+                    <div class="table-cell"></div>
+                    <div class="table-cell"></div>
+                    <div class="table-cell"></div>
+                    <div class="table-cell"></div>
+                    <div class="table-cell"></div>
+                    <div class="table-cell"></div>
+                    <div class="table-cell"></div>
+                    <div class="table-cell"></div>
+                    <div class="table-cell"></div>
+                </div>
+            </div>
+
+        </div>
+    </el-dialog>
+
 </template>
-<style lang="scss" scoped>
+<style lang="scss">
 .dialog-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
     color: #7d8087;
     font-size: 18px;
+}
+
+
+.print-paper {
+    width: 200mm;
+    height: 287mm;
+    padding: 4mm;
+    box-sizing: border-box;
+    margin: 0 auto;
+    background: white;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.print-paper.landscape {
+    width: 287mm !important;
+    height: 200mm !important;
+}
+
+
+.biaoge {
+    .biaoge-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+
+        .biaoge-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #303133;
+        }
+    }
+
+    .biaoge-contain {
+
+        .biaoge-row {
+            display: flex;
+            width: 100%;
+            height: 10mm;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #ebeef5;
+            margin-bottom: -1px;
+            /* 添加负外边距使边框重叠 */
+
+
+
+            .biaoge-item {
+                flex-grow: 1;
+                display: flex;
+                height: 100%;
+                align-items: center;
+                border: 1px solid #ebeef5;
+                margin: 0 -1px;
+                /* 添加负外边距使边框重叠 */
+
+                .label {
+                    min-width: 10mm;
+                    height: 100%;
+                    font-weight: bold;
+                    background-color: #f5f7fa !important;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 1mm 1.5mm;
+                    box-sizing: border-box;
+                    /* 添加此行 */
+                }
+
+                .default {
+                    flex-grow: 1;
+                    min-width: 20mm;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+            }
+        }
+
+
+    }
+}
+
+.weigh-table {
+    width: 100%;
+    margin-top: 20px;
+
+    .weigh-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 13mm !important;
+        font-weight: bold;
+        background-color: #f5f7fa;
+
+        .table-cell {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 1mm 1.5mm;
+            box-sizing: border-box;
+            height: 100%;
+            border-left: 1px solid #ebeef5;
+
+            &:first-child {
+                border-left: none;
+            }
+        }
+    }
+
+    .table-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 10mm;
+        border-bottom: 1px solid #ebeef5;
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        .table-cell {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 1mm 1.5mm;
+            box-sizing: border-box;
+            height: 100%;
+            border-left: 1px solid #ebeef5;
+
+            &:first-child {
+                border-left: none;
+            }
+
+            width: 10mm;
+            /* 设置每个单元格的宽度 */
+        }
+    }
 }
 </style>

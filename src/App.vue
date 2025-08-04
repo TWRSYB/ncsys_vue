@@ -9,8 +9,8 @@
     <router-view></router-view>
 </template>
 
-<style lang="scss" scoped>
-:deep(.el-divider--horizontal) {
+<style lang="scss">
+.el-divider--horizontal {
     border-top: 2px var(--el-border-color) var(--el-border-style);
     margin: 35px 0;
 
@@ -22,7 +22,7 @@
     }
 }
 
-:deep(.search-form) {
+.search-form {
     .el-form-item {
         width: 270px;
     }
@@ -37,7 +37,7 @@
     }
 }
 
-:deep(.el-form-item.is-error) {
+.el-form-item.is-error {
     .el-checkbox-group {
         border: 1px solid red;
         border-radius: 4px;
@@ -51,7 +51,7 @@
 }
 
 /* 穿透 scoped 作用域，直接修改子组件样式 */
-:deep(.el-table) {
+.el-table {
     .el-form-item__content {
         margin-left: 0 !important;
         justify-content: center;
@@ -66,7 +66,7 @@
 
 }
 
-:deep(.el-radio-button__original-radio:disabled:checked+.el-radio-button__inner) {
+.el-radio-button__original-radio:disabled:checked+.el-radio-button__inner {
     // background-color: var(--el-checkbox-button-checked-bg-color);
     // background-color: hsl(0, 59%, 45%);
     background-color: hsl(207, 100%, 80%);
@@ -77,7 +77,7 @@
     cursor: not-allowed;
 }
 
-:deep() .el-checkbox-button.is-disabled.is-checked .el-checkbox-button__inner {
+.el-checkbox-button.is-disabled.is-checked .el-checkbox-button__inner {
     // background-color: var(--el-checkbox-button-checked-bg-color);
     // background-color: hsl(0, 59%, 45%);
     background-color: hsl(207, 100%, 80%);
@@ -88,7 +88,7 @@
     cursor: not-allowed;
 }
 
-:deep(.page-container) {
+.page-container {
     min-height: 100%;
     box-sizing: border-box;
     position: relative;
@@ -149,7 +149,7 @@
 
 
 
-:deep().el-pagination {
+.el-pagination {
     margin-top: 20px;
     justify-content: flex-end
 }
