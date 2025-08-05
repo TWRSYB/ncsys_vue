@@ -42,6 +42,7 @@ const sysMenuItems = [
 const grainMenuItems = [
     { path: '/Grain/CornCobPurchase', title: '玉米棒收购', icon: 'SVG_CornCob_1', allowedRoles: ['sysAdmin', 'manager', 'operator'] },
     { path: '/Grain/CornGrainPurchase', title: '玉米粒收购', icon: 'SVG_CornGrain_1', allowedRoles: ['sysAdmin', 'manager', 'operator'] },
+    { path: '/Grain/CornXinPurchase', title: '玉米芯收购', icon: 'SVG_CornXin', allowedRoles: ['sysAdmin', 'manager', 'operator'] },
     { path: '/Grain/CornGrainSell', title: '玉米粒出售', icon: 'SVG_CornGrain_2', allowedRoles: ['sysAdmin', 'manager', 'operator'] },
 ];
 

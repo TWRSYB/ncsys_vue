@@ -5,8 +5,8 @@ const loginUserStore = useLoginUserStore()
 
 
 
-const TDS_CornGrainPurchase = ref([])
-const TDS_CornGrainPurchaseWeighRecord = ref([])
+const TDS_CornXinPurchase = ref([])
+const TDS_CornXinPurchaseWeighRecord = ref([])
 
 const FORM_Search = ref(null)
 
@@ -28,9 +28,9 @@ const QUERY_Main = ref({
     total: 0
 })
 
-const ACT_GetList = () => {
+const ACT_pageQuery = () => {
 
-    $Requests.post('/cornGrainPurchase/getList', QUERY_Main.value)
+    $Requests.post('/cornXinPurchase/pageQuery', QUERY_Main.value)
         .then(response => {
             if (response.code === 200) {
                 // 成功获取用户列表
@@ -43,15 +43,15 @@ const ACT_GetList = () => {
 
 onMounted(() => {
     // 页面加载时获取表设计
-    $TDS.setTableDesign(TDS_CornGrainPurchase, 't_corn_grain_purchase');
-    $TDS.setTableDesign(TDS_CornGrainPurchaseWeighRecord, 'ts_corn_grain_purchase_weigh_record');
+    $TDS.setTableDesign(TDS_CornXinPurchase, 't_corn_xin_purchase');
+    $TDS.setTableDesign(TDS_CornXinPurchaseWeighRecord, 'ts_corn_xin_purchase_weigh_record');
     // 获取交易列表
-    ACT_GetList()
+    ACT_pageQuery()
 })
 
 const OPT_clearingForm = computed(() => {
     try {
-        return TDS_CornGrainPurchase.value.filter(item => item.columnName === 'clearingForm')[0].types
+        return TDS_CornXinPurchase.value.filter(item => item.columnName === 'clearingForm')[0].types
     } catch (error) {
         return {}
     }
@@ -59,7 +59,7 @@ const OPT_clearingForm = computed(() => {
 
 const OPT_tradeStatus = computed(() => {
     try {
-        return TDS_CornGrainPurchase.value.filter(item => item.columnName === 'tradeStatus')[0].types
+        return TDS_CornXinPurchase.value.filter(item => item.columnName === 'tradeStatus')[0].types
     } catch (error) {
         return []
     }
@@ -67,7 +67,7 @@ const OPT_tradeStatus = computed(() => {
 
 const OPT_impurity = computed(() => {
     try {
-        return TDS_CornGrainPurchase.value.filter(item => item.columnName === 'impurity')[0].types
+        return TDS_CornXinPurchase.value.filter(item => item.columnName === 'impurity')[0].types
     } catch (error) {
         return []
     }
@@ -77,15 +77,15 @@ const OPT_YN = { "Y": "是", "N": "否" }
 
 const OPT_carrier = computed(() => {
     try {
-        return TDS_CornGrainPurchaseWeighRecord.value.filter(item => item.columnName === 'carrier')[0].types
+        return TDS_CornXinPurchaseWeighRecord.value.filter(item => item.columnName === 'carrier')[0].types
     } catch (error) {
         return {}
     }
 });
 
-const DEALED_TDS_CornGrainPurchase = computed(() => {
+const DEALED_TDS_CornXinPurchase = computed(() => {
     // 插入补充字段
-    const newTDS = TDS_CornGrainPurchase.value.concat([
+    const newTDS = TDS_CornXinPurchase.value.concat([
         {
             columnName: 'sellerName',
             columnComment: '出售人',
@@ -125,18 +125,18 @@ const FLD_field = ref(['tradeDate', 'sellerName', 'tradeStatus', 'clearingForm',
 
 
 // 过滤表设计
-const FLDTDS_CornGrainPurchase = computed(() => {
+const FLDTDS_CornXinPurchase = computed(() => {
     if (loginUserStore.loginUser.roleCode == 'sysAdmin') {
         // 如果是系统管理员,则过滤掉敏感字段
-        return DEALED_TDS_CornGrainPurchase.value.filter(field => FLD_field.value.includes(field.columnName))
+        return DEALED_TDS_CornXinPurchase.value.filter(field => FLD_field.value.includes(field.columnName))
     }
     if (loginUserStore.loginUser.roleCode == 'manager') {
         // 如果是管理员,则过滤掉敏感字段
-        return DEALED_TDS_CornGrainPurchase.value.filter(field => FLD_field.value.includes(field.columnName))
+        return DEALED_TDS_CornXinPurchase.value.filter(field => FLD_field.value.includes(field.columnName))
     }
     if (loginUserStore.loginUser.roleCode == 'operator') {
         // 如果是操作人,则过滤掉敏感字段
-        return DEALED_TDS_CornGrainPurchase.value.filter(field => FLD_field.value.includes(field.columnName))
+        return DEALED_TDS_CornXinPurchase.value.filter(field => FLD_field.value.includes(field.columnName))
     }
     return []
 })
@@ -228,7 +228,7 @@ const rules = {
     unitPrice: [
         { required: true, message: '请输入单价', trigger: 'change' },
         // 单价法为0.4~1.7
-        { validator: $VLD.doubleRange(0.4, 1.7), trigger: 'blur' }
+        { validator: $VLD.doubleRange(0.2, 1.5), trigger: 'blur' }
     ],
 
 
@@ -310,11 +310,11 @@ const SBM_saveTrade = () => {
         FD_Trade.value.totalPrice = calculateTrade2.value.totalPrice; // 设置总价
 
         // 提交保存收购
-        $Requests.post('/cornGrainPurchase/saveTrade', FD_Trade.value, { showSuccessMsg: true })
+        $Requests.post('/cornXinPurchase/saveTrade', FD_Trade.value, { showSuccessMsg: true })
             .then(response => {
                 if (response.code === 200) {
                     SHOW_Drawer.value = false;
-                    ACT_GetList();
+                    ACT_pageQuery();
                 } else if (['manager'].includes(loginUserStore.loginUser.roleCode)) {
                     if (response.code === 555) {
                         ElMessageBox.confirm(
@@ -347,8 +347,7 @@ const SBM_saveTrade = () => {
                                     });
                             })
                     }
-
-                } 
+                }
             })
     });
 };
@@ -370,11 +369,11 @@ const SBM_purchaseComplete = () => {
             FD_Trade.value.totalWeight = calculateTrade2.value.totalWeight; // 设置总重量
             FD_Trade.value.totalPrice = calculateTrade2.value.totalPrice; // 设置总价
 
-            $Requests.post('/cornGrainPurchase/purchaseComplete', FD_Trade.value, { showSuccessMsg: true })
+            $Requests.post('/cornXinPurchase/purchaseComplete', FD_Trade.value, { showSuccessMsg: true })
                 .then(response => {
                     if (response.code === 200) {
                         SHOW_Drawer.value = false;
-                        ACT_GetList();
+                        ACT_pageQuery();
                     }
                 })
         });
@@ -384,7 +383,7 @@ const SBM_purchaseComplete = () => {
 
 const ACT_EditTrade = (row) => {
     // 查询交易详情
-    $Requests.post('/cornGrainPurchase/getTradeDetail', row)
+    $Requests.post('/cornXinPurchase/getTradeDetail', row)
         .then(response => {
             if (response.code === 200) {
                 if (response.data.tradeStatus !== '收购中') {
@@ -408,7 +407,7 @@ const ACT_EditTrade = (row) => {
 
 const ACT_detail = (row) => {
     // 查询交易详情
-    $Requests.post('/cornGrainPurchase/getTradeDetail', row)
+    $Requests.post('/cornXinPurchase/getTradeDetail', row)
         .then(response => {
             if (response.code === 200) {
                 // 成功获取交易详情
@@ -433,7 +432,7 @@ const FD_Settle = ref({}) // 结算表单数据
 const FORM_Settle = ref(null) // 交易表单
 const ACT_SettleTrade = (row) => {
     // 查询交易详情
-    $Requests.post('/cornGrainPurchase/getTradeDetail', row)
+    $Requests.post('/cornXinPurchase/getTradeDetail', row)
         .then(response => {
             if (response.code === 200) {
                 if (response.data.tradeStatus !== '待结算') {
@@ -525,11 +524,11 @@ const settleTrade = () => {
     // 计算结算金额
     FD_Settle.value.clearingAmount = calculateSettle.value.clearingAmount;
     // 提交结算
-    $Requests.post('/cornGrainPurchase/settleTrade', FD_Settle.value, { showSuccessMsg: true })
+    $Requests.post('/cornXinPurchase/settleTrade', FD_Settle.value, { showSuccessMsg: true })
         .then(response => {
             if (response.code === 200) {
                 SHOW_Settle.value = false;
-                ACT_GetList();
+                ACT_pageQuery();
             }
         })
 }
@@ -601,7 +600,7 @@ const ACT_deleteTrade = (trade) => {
 }
 
 
-const BIZ_name = '玉米粒收购'
+const BIZ_name = '玉米芯收购'
 const SHOW_print = ref(false);
 const printConfig = {
     id: 'printArea',
@@ -681,7 +680,7 @@ const printConfig = {
             </div>
             <div class="field-filter" v-if="SHOW_fieldFilter" v-click-outside="() => SHOW_fieldFilter = false">
                 <el-checkbox-group v-model="FLD_field" style="display: flex; flex-wrap: wrap;">
-                    <el-checkbox-button v-for="(field, index) in DEALED_TDS_CornGrainPurchase" :key="index"
+                    <el-checkbox-button v-for="(field, index) in DEALED_TDS_CornXinPurchase" :key="index"
                         :value="field.columnName">
                         {{ field.columnComment }}
                     </el-checkbox-button>
@@ -709,7 +708,7 @@ const printConfig = {
             </el-form-item>
 
             <el-form-item class="search-btn">
-                <el-button type="primary" @click="ACT_GetList">搜索</el-button>
+                <el-button type="primary" @click="ACT_pageQuery">搜索</el-button>
                 <el-button @click="FORM_Search.resetFields()">重置</el-button>
             </el-form-item>
         </el-form>
@@ -719,7 +718,7 @@ const printConfig = {
             <el-table-column type="index" width="60" />
             <!-- <el-table-column label="交易日期" prop="tradeDate" width="120"></el-table-column>
             <el-table-column label="出售人" prop="sellerName" width="120"></el-table-column> -->
-            <el-table-column v-for="field in FLDTDS_CornGrainPurchase" :key="field.columnName"
+            <el-table-column v-for="field in FLDTDS_CornXinPurchase" :key="field.columnName"
                 :label="field.columnComment" :prop="field.columnName">
                 <template #default="{ row }" v-if="field.type == 'lv'">
                     {{ field.lvs[row[field.columnName]] }}
@@ -752,7 +751,7 @@ const printConfig = {
 
         <!-- 分页条 -->
         <el-pagination v-model:current-page="QUERY_Main.pageNum" v-model:page-size="QUERY_Main.pageSize"
-            :total="QUERY_Main.total" :page-sizes="[10, 20, 50, 100]" @change="ACT_GetList"
+            :total="QUERY_Main.total" :page-sizes="[10, 20, 50, 100]" @change="ACT_pageQuery"
             layout="jumper, total, sizes, prev, pager, next" />
 
         <!-- 新增 -->
@@ -970,7 +969,8 @@ const printConfig = {
                         <span>总价:</span>&nbsp;<span>{{ calculateTrade2.totalPrice }}&nbsp;</span><span>元</span>
                     </div>
                     <div>
-                        <el-button type="primary" @click="SBM_saveTrade" v-if="TT_Drawer != `${BIZ_name}详情`">保存</el-button>
+                        <el-button type="primary" @click="SBM_saveTrade"
+                            v-if="TT_Drawer != `${BIZ_name}详情`">保存</el-button>
                         <el-button type="primary" @click="SBM_purchaseComplete"
                             v-if="TT_Drawer != `${BIZ_name}详情`">收购完成</el-button>
                     </div>

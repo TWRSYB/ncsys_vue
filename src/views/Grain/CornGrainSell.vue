@@ -170,13 +170,13 @@ const FLDTDS_CornGrainSell = computed(() => {
 
 //控制抽屉是否显示
 const SHOW_Drawer = ref(false)
-const TT_Drawer = ref('交易详情')
+const TT_Drawer = ref(`${BIZ_name}详情`)
 const FORM_Trade = ref(null)
 const ACT_SHOW_addTrade = () => {
 
     // 显示抽屉
     SHOW_Drawer.value = true;
-    TT_Drawer.value = '新增交易'
+    TT_Drawer.value = `新增${BIZ_name}`
     init_FD_Trade(); // 初始化表单数据
     nextTick(() => {
         // 重置表单数据
@@ -412,37 +412,104 @@ const SBM_saveTrade = () => {
                     if (response.code === 200) {
                         SHOW_Drawer.value = false;
                         ACT_PageQuery();
-                    } else if (response.code === 555 && ['manager'].includes(loginUserStore.loginUser.roleCode)) {
-                        ElMessageBox.confirm(
-                            response.message,
-                            '提示',
-                            {
-                                distinguishCancelAndClose: true,
-                                confirmButtonText: `使用 ${response.message.split(' ')[1]} 提交`,
-                                cancelButtonText: `更新姓名为 ${FD_Trade.value.buyerPerson.personName} 并提交`,
-                                type: 'warning',
-                            }
-                        )
-                            .then(() => {
-                                // 使用已有姓名提交
-                                FD_Trade.value.buyerPerson.personName = response.message.split(' ')[1];
-                                SBM_saveTrade()
-                            })
-                            .catch((action) => {
-                                if (action === 'close') {
-                                    // 关闭提示
-                                    return;
+                    } else if (['manager'].includes(loginUserStore.loginUser.roleCode)) {
+                        // 若购买人名称与后台已有姓名不一致, 且当前用户是管理员, 则允许更新姓名操作
+                        if (response.code === 555) { // 555代表个人购买人姓名不一致
+                            ElMessageBox.confirm(
+                                response.message,
+                                '提示',
+                                {
+                                    distinguishCancelAndClose: true,
+                                    confirmButtonText: `使用 ${response.data} 提交`,
+                                    cancelButtonText: `更新姓名为 ${FD_Trade.value.buyerPerson.personName} 并提交`,
+                                    type: 'warning',
+                                    customStyle: { 'min-width': '500px', 'max-width': '800px' }
                                 }
-                                // 更新姓名并提交
-                                $Requests.post('/person/updateNameByPhoneNum', FD_Trade.value.buyerPerson, { showSuccessMsg: true })
-                                    .then((response) => {
-                                        if (response.code === 200) {
-                                            // 更新成功后再次提交
-                                            SBM_saveTrade();
-                                        }
-                                    });
-                            })
+                            )
+                                .then(() => {
+                                    // 使用已有姓名提交
+                                    FD_Trade.value.buyerPerson.personName = response.data;
+                                    SBM_saveTrade()
+                                })
+                                .catch((action) => {
+                                    if (action === 'close') {
+                                        // 关闭提示
+                                        return;
+                                    }
+                                    // 更新姓名并提交
+                                    $Requests.post('/person/updateNameByPhoneNum', FD_Trade.value.buyerPerson, { showSuccessMsg: true })
+                                        .then((response) => {
+                                            if (response.code === 200) {
+                                                // 更新成功后再次提交
+                                                SBM_saveTrade();
+                                            }
+                                        });
+                                })
+                        } else if (response.code === 666) { // 666代表企业购买人企业名称不一致
+                            ElMessageBox.confirm(
+                                response.message,
+                                '提示',
+                                {
+                                    distinguishCancelAndClose: true,
+                                    confirmButtonText: `使用 ${response.data} 提交`,
+                                    cancelButtonText: `更新企业名称为 ${FD_Trade.value.buyerCompany.companyName} 并提交`,
+                                    type: 'warning',
+                                    customStyle: { 'min-width': '500px', 'max-width': '800px' }
+                                }
+                            )
+                                .then(() => {
+                                    // 使用已有姓名提交
+                                    FD_Trade.value.buyerCompany.companyName = response.data;
+                                    SBM_saveTrade()
+                                })
+                                .catch((action) => {
+                                    if (action === 'close') {
+                                        // 关闭提示
+                                        return;
+                                    }
+                                    // 更新姓名并提交
+                                    $Requests.post('/company/updateCompanyNameByCompanyPhoneNum', FD_Trade.value.buyerCompany, { showSuccessMsg: true })
+                                        .then((response) => {
+                                            if (response.code === 200) {
+                                                // 更新成功后再次提交
+                                                SBM_saveTrade();
+                                            }
+                                        });
+                                })
+                        } else if (response.code === 777) { // 777代表企业购买人对接人姓名不一致
+                            ElMessageBox.confirm(
+                                response.message,
+                                '提示',
+                                {
+                                    distinguishCancelAndClose: true,
+                                    confirmButtonText: `使用 ${response.data} 提交`,
+                                    cancelButtonText: `更新对接人姓名为 ${FD_Trade.value.buyerCompany.dockPersonName} 并提交`,
+                                    type: 'warning',
+                                    customStyle: { 'min-width': '500px', 'max-width': '800px' }
+                                }
+                            )
+                                .then(() => {
+                                    // 使用已有姓名提交
+                                    FD_Trade.value.buyerCompany.dockPersonName = response.data;
+                                    SBM_saveTrade()
+                                })
+                                .catch((action) => {
+                                    if (action === 'close') {
+                                        // 关闭提示
+                                        return;
+                                    }
+                                    // 更新姓名并提交
+                                    $Requests.post('/company/updateDockPersonNameByPhoneNum', FD_Trade.value.buyerCompany, { showSuccessMsg: true })
+                                        .then((response) => {
+                                            if (response.code === 200) {
+                                                // 更新成功后再次提交
+                                                SBM_saveTrade();
+                                            }
+                                        });
+                                })
+                        }
                     }
+
                 })
         }
     );
@@ -489,7 +556,7 @@ const ACT_EditTrade = (row) => {
                 init_FD_Trade(); // 初始化表单数据
                 // 显示抽屉
                 SHOW_Drawer.value = true;
-                TT_Drawer.value = '编辑交易'
+                TT_Drawer.value = `编辑${BIZ_name}`
                 nextTick(() => {
                     // 重置表单数据
                     FORM_Trade.value.resetFields();
@@ -508,7 +575,7 @@ const ACT_detail = (row) => {
             if (response.code === 200) {
                 // 成功获取交易详情
                 SHOW_Drawer.value = true
-                TT_Drawer.value = '交易详情'
+                TT_Drawer.value = `${BIZ_name}详情`
                 init_FD_Trade(); // 初始化表单数据
                 nextTick(() => {
                     // 重置表单数据
@@ -534,7 +601,7 @@ const ACT_SettleTrade = (row) => {
                 }
                 // 成功获取交易详情
                 SHOW_Drawer.value = true
-                TT_Drawer.value = '结算交易'
+                TT_Drawer.value = `结算${BIZ_name}`
                 init_FD_Trade(); // 初始化表单数据
                 nextTick(() => {
                     // 重置表单数据
@@ -782,15 +849,12 @@ const CCLT_clearingAmount = computed(() => {
     return FD_Trade.value.clearingAmount
 })
 
+
+const BIZ_name = '玉米粒出售'
 const SHOW_print = ref(false);
-
-
-
-
-
 const printConfig = {
     id: 'printArea',
-    popTitle: '玉米粒出售模板', // 空标题避免浏览器默认标题
+    popTitle: `${BIZ_name}模板`, // 空标题避免浏览器默认标题
     originalTitle: document.title, // 保存原始标题
     extraHead: ` 
     <style>
@@ -848,7 +912,7 @@ const printConfig = {
         <template #header>
             <div class="header">
                 <div class="title">
-                    <div> 玉米粒出售 </div>
+                    <div> {{ BIZ_name }} </div>
                     <el-icon class="field-filter-icon" @click.stop="SHOW_fieldFilter = !SHOW_fieldFilter"
                         v-if="['sysAdmin', 'manager'].includes(loginUserStore.loginUser.roleCode)">
                         <SVG_Table />
@@ -940,7 +1004,7 @@ const printConfig = {
         <!-- 新增 -->
         <el-drawer v-model="SHOW_Drawer" :title="TT_Drawer" direction="rtl" size="90%">
             <el-form ref="FORM_Trade" :model="FD_Trade" label-width="110px" :rules="rules"
-                :disabled="['交易详情', '结算交易'].includes(TT_Drawer)">
+                :disabled="[`${BIZ_name}详情`, `结算${BIZ_name}`].includes(TT_Drawer)">
                 <el-row>
                     <el-form-item label="交易日期" prop="tradeDate" v-inline-flex>
                         <el-date-picker v-model="FD_Trade.tradeDate" value-format="YYYY-MM-DD">
@@ -991,7 +1055,7 @@ const printConfig = {
                 </el-row>
 
 
-                <el-row v-if="['交易详情', '结算交易'].includes(TT_Drawer)">
+                <el-row v-if="[`${BIZ_name}详情`, `结算${BIZ_name}`].includes(TT_Drawer)">
                     <el-form-item label="总重量" prop="totalWeight" v-inline-flex>
                         <el-input v-model="FD_Trade.totalWeight" v-input-double>
                             <template #append>kg</template>
@@ -1012,22 +1076,22 @@ const printConfig = {
 
 
                 <el-form ref="FORM_Settle" :model="FD_Trade" label-width="110px" :rules="rules_settle"
-                    v-if="['交易详情', '结算交易'].includes(TT_Drawer)">
+                    v-if="[`${BIZ_name}详情`, `结算${BIZ_name}`].includes(TT_Drawer)">
                     <el-row>
                         <el-form-item label="实际结算日期" prop="actualClearingDate" v-inline-flex>
                             <el-date-picker v-model="FD_Trade.actualClearingDate" value-format="YYYY-MM-DD"
-                                :disabled="['交易详情'].includes(TT_Drawer)"></el-date-picker>
+                                :disabled="[`${BIZ_name}详情`].includes(TT_Drawer)"></el-date-picker>
                         </el-form-item>
                         <el-form-item label="补价" prop="premium" v-inline-flex>
                             <el-input v-model="FD_Trade.premium" v-input-double="3"
-                                :disabled="['交易详情'].includes(TT_Drawer)">
+                                :disabled="[`${BIZ_name}详情`].includes(TT_Drawer)">
                                 <template #append>元</template>
                             </el-input>
                         </el-form-item>
-                        <el-form-item label="实际结算金额" prop="clearingAmount" v-if="['结算交易'].includes(TT_Drawer)">
+                        <el-form-item label="实际结算金额" prop="clearingAmount" v-if="[`结算${BIZ_name}`].includes(TT_Drawer)">
                             <el-input :value="CCLT_clearingAmount" disabled></el-input>
                         </el-form-item>
-                        <el-form-item label="实际结算金额" prop="clearingAmount" v-if="['交易详情'].includes(TT_Drawer)">
+                        <el-form-item label="实际结算金额" prop="clearingAmount" v-if="[`${BIZ_name}详情`].includes(TT_Drawer)">
                             <el-input v-model="FD_Trade.clearingAmount" disabled></el-input>
                         </el-form-item>
 
@@ -1035,7 +1099,7 @@ const printConfig = {
 
                     <el-form-item label="备注" prop="remark">
                         <el-input v-model="FD_Trade.remark" type="textarea"
-                            :disabled="['交易详情'].includes(TT_Drawer)"></el-input>
+                            :disabled="[`${BIZ_name}详情`].includes(TT_Drawer)"></el-input>
                     </el-form-item>
                 </el-form>
 
@@ -1169,7 +1233,7 @@ const printConfig = {
                                 <el-input v-model="row.verhicleNum" />
                             </template>
                         </el-table-column>
-                        <el-table-column label="毛重(kg)" prop="ourGrossWeight" align="center">
+                        <el-table-column label="毛重(我方)" prop="ourGrossWeight" align="center">
                             <template #default="{ row }">
                                 <el-form-item prop="ourGrossWeight"
                                     :rules="FD_Trade.weighSide == '我方' ? $VLD.VIT_required(row.ourGrossWeight) : []">
@@ -1178,7 +1242,7 @@ const printConfig = {
                             </template>
                         </el-table-column>
 
-                        <el-table-column label="皮重(kg)" prop="ourTareWeight" align="center">
+                        <el-table-column label="皮重(我方)" prop="ourTareWeight" align="center">
                             <template #default="{ row }">
                                 <el-form-item prop="ourTareWeight"
                                     :rules="FD_Trade.weighSide == '我方' ? $VLD.VIT_required(row.ourTareWeight) : []">
@@ -1186,7 +1250,7 @@ const printConfig = {
                                 </el-form-item>
                             </template>
                         </el-table-column>
-                        <el-table-column label="净重(kg)" prop="ourNetWeight" align="center">
+                        <el-table-column label="净重(我方)" prop="ourNetWeight" align="center">
                             <template #default="{ row }">
                                 <span :style="row.ourNetWeight == '毛重必须大于皮重' ? { color: 'red' } : {}">
                                     {{ row.ourNetWeight }}
@@ -1194,7 +1258,7 @@ const printConfig = {
                             </template>
                         </el-table-column>
 
-                        <el-table-column label="毛重(买方)" prop="grossWeight" align="center">
+                        <el-table-column label="毛重(kg)" prop="grossWeight" align="center">
                             <template #default="{ row }">
                                 <el-form-item prop="grossWeight"
                                     :rules="FD_Trade.weighSide == '买方' ? $VLD.VIT_required(row.grossWeight) : []">
@@ -1202,7 +1266,7 @@ const printConfig = {
                                 </el-form-item>
                             </template>
                         </el-table-column>
-                        <el-table-column label="皮重(买方)" prop="tareWeight" align="center">
+                        <el-table-column label="皮重(kg)" prop="tareWeight" align="center">
                             <template #default="{ row }">
                                 <el-form-item prop="tareWeight"
                                     :rules="FD_Trade.weighSide == '买方' ? $VLD.VIT_required(row.tareWeight) : []">
@@ -1210,7 +1274,7 @@ const printConfig = {
                                 </el-form-item>
                             </template>
                         </el-table-column>
-                        <el-table-column label="净重(买方)" prop="netWeight" align="center">
+                        <el-table-column label="净重(kg)" prop="netWeight" align="center">
                             <template #default="{ row }">
                                 <span :style="row.netWeight == '毛重必须大于皮重' ? { color: 'red' } : {}">
                                     {{ row.netWeight }}
@@ -1262,11 +1326,11 @@ const printConfig = {
                     </div>
                     <div>
                         <el-button type="primary" @click="SBM_saveTrade"
-                            v-if="['新增交易', '编辑交易'].includes(TT_Drawer)">保存</el-button>
+                            v-if="[`新增${BIZ_name}`, `编辑${BIZ_name}`].includes(TT_Drawer)">保存</el-button>
                         <el-button type="primary" @click="SBM_sellComplete"
-                            v-if="['新增交易', '编辑交易'].includes(TT_Drawer)">出售完成</el-button>
+                            v-if="[`新增${BIZ_name}`, `编辑${BIZ_name}`].includes(TT_Drawer)">出售完成</el-button>
                         <el-button type="primary" @click="SBM_Settle"
-                            v-if="['结算交易'].includes(TT_Drawer)">提交结算</el-button>
+                            v-if="[`结算${BIZ_name}`].includes(TT_Drawer)">提交结算</el-button>
                     </div>
                 </div>
             </template>
@@ -1292,7 +1356,7 @@ const printConfig = {
 
             <div class="biaoge">
                 <div class="biaoge-header">
-                    <div class="biaoge-title">玉米粒出售模板</div>
+                    <div class="biaoge-title"> {{ BIZ_name }}模板</div>
                 </div>
                 <div class="biaoge-contain">
                     <div class="biaoge-row">
@@ -1321,7 +1385,7 @@ const printConfig = {
                         <div class="biaoge-item">
                             <div class="label">杂质</div>
                             <div class="default">
-                                <el-radio-group v-model="FD_Trade.impurity">
+                                <el-radio-group>
                                     <el-radio-button v-for="(item) in OPT_impurity" :key="item" :label="item"
                                         :value="item"></el-radio-button>
                                 </el-radio-group>
@@ -1347,7 +1411,7 @@ const printConfig = {
                         </div>
                         <div class="biaoge-item">
                             <div class="label">地址</div>
-                            <div class="default"></div>
+                            <div class="default" style="width: 60mm;"></div>
                         </div>
                     </div>
                     <div class="biaoge-row">
@@ -1366,16 +1430,16 @@ const printConfig = {
             <el-divider content-position="left" style="margin-top: 50px;">过磅记录</el-divider>
 
             <div class="weigh-table">
-                <div class="table-row weigh-header">
+                <div class="table-row weigh-header" style="height: 13mm !important;">
                     <div class="table-cell" style="width: 5mm;">序号</div>
                     <div class="table-cell" style="width: 14mm;">承运方</div>
                     <div class="table-cell">车牌号</div>
+                    <div class="table-cell">毛重(我方)</div>
+                    <div class="table-cell">皮重(我方)</div>
+                    <div class="table-cell">净重(我方)</div>
                     <div class="table-cell">毛重(kg)</div>
                     <div class="table-cell">皮重(kg)</div>
                     <div class="table-cell">净重(kg)</div>
-                    <div class="table-cell">毛重(买方)</div>
-                    <div class="table-cell">皮重(买方)</div>
-                    <div class="table-cell">净重(买方)</div>
                     <div class="table-cell">净重差异</div>
                     <div class="table-cell">备注</div>
                 </div>
@@ -1407,147 +1471,5 @@ const printConfig = {
     align-items: center;
     color: #7d8087;
     font-size: 18px;
-}
-
-
-.print-paper {
-    width: 200mm;
-    height: 287mm;
-    padding: 4mm;
-    box-sizing: border-box;
-    margin: 0 auto;
-    background: white;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-}
-
-.print-paper.landscape {
-    width: 287mm !important;
-    height: 200mm !important;
-}
-
-
-.biaoge {
-    .biaoge-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-
-        .biaoge-title {
-            font-size: 16px;
-            font-weight: bold;
-            color: #303133;
-        }
-    }
-
-    .biaoge-contain {
-
-        .biaoge-row {
-            display: flex;
-            width: 100%;
-            height: 10mm;
-            align-items: center;
-            justify-content: space-between;
-            border: 1px solid #ebeef5;
-            margin-bottom: -1px;
-            /* 添加负外边距使边框重叠 */
-
-
-
-            .biaoge-item {
-                flex-grow: 1;
-                display: flex;
-                height: 100%;
-                align-items: center;
-                border: 1px solid #ebeef5;
-                margin: 0 -1px;
-                /* 添加负外边距使边框重叠 */
-
-                .label {
-                    min-width: 10mm;
-                    height: 100%;
-                    font-weight: bold;
-                    background-color: #f5f7fa !important;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 1mm 1.5mm;
-                    box-sizing: border-box;
-                    /* 添加此行 */
-                }
-
-                .default {
-                    flex-grow: 1;
-                    min-width: 20mm;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-            }
-        }
-
-
-    }
-}
-
-.weigh-table {
-    width: 100%;
-    margin-top: 20px;
-
-    .weigh-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        height: 13mm !important;
-        font-weight: bold;
-        background-color: #f5f7fa;
-
-        .table-cell {
-            flex-grow: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 1mm 1.5mm;
-            box-sizing: border-box;
-            height: 100%;
-            border-left: 1px solid #ebeef5;
-
-            &:first-child {
-                border-left: none;
-            }
-        }
-    }
-
-    .table-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        height: 10mm;
-        border-bottom: 1px solid #ebeef5;
-
-        &:last-child {
-            border-bottom: none;
-        }
-
-        .table-cell {
-            flex-grow: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 1mm 1.5mm;
-            box-sizing: border-box;
-            height: 100%;
-            border-left: 1px solid #ebeef5;
-
-            &:first-child {
-                border-left: none;
-            }
-
-            width: 10mm;
-            /* 设置每个单元格的宽度 */
-        }
-    }
 }
 </style>

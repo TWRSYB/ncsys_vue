@@ -41,6 +41,12 @@ const routes = [
                 component: CornGrainPurchaseVue,
                 meta: { requiresAuth: true, roles: ['sysAdmin', 'manager', 'operator'] },
             },
+            // 玉米芯收购
+            {
+                path: '/Grain/CornXinPurchase',
+                component: () => import('@/views/Grain/CornXinPurchase.vue'),
+                meta: { requiresAuth: true, roles: ['sysAdmin', 'manager', 'operator'] },
+            },
             // 玉米粒出售
             {
                 path: '/Grain/CornGrainSell',
