@@ -44,6 +44,7 @@ const grainMenuItems = [
     { path: '/Grain/CornGrainPurchase', title: '玉米粒收购', icon: 'SVG_CornGrain_1', allowedRoles: ['sysAdmin', 'manager', 'operator'] },
     { path: '/Grain/CornXinPurchase', title: '玉米芯收购', icon: 'SVG_CornXin', allowedRoles: ['sysAdmin', 'manager', 'operator'] },
     { path: '/Grain/CornGrainSell', title: '玉米粒出售', icon: 'SVG_CornGrain_2', allowedRoles: ['sysAdmin', 'manager', 'operator'] },
+    { path: '/Grain/CornXinSell', title: '玉米芯出售', icon: 'SVG_CornXin', allowedRoles: ['sysAdmin', 'manager', 'operator'] },
 ];
 
 // 农资交易菜单

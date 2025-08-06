@@ -18,17 +18,23 @@ const routes = [
         component: () => import('@/views/Layout.vue'),
         meta: { requiresAuth: true }, // 需要认证的路由
         children: [
+
+            // ==============================  系统功能 ================================
+            // 用户管理
             {
                 path: '/sys/UserManage',
                 component: () => import('@/views/sys/UserManage.vue'),
                 meta: { requiresAuth: true, roles: ['sysAdmin'] },
             },
+            // 数据库设计
             {
                 path: '/sys/DbDesign',
                 component: () => import('@/views/sys/DbDesign.vue'),
                 meta: { requiresAuth: true, roles: ['sysAdmin'] },
             },
-            // 粮食买卖
+
+
+            // ==============================  粮食买卖 ================================
             // 玉米棒收购
             {
                 path: '/Grain/CornCobPurchase',
@@ -53,7 +59,14 @@ const routes = [
                 component: CornGrainSellVue,
                 meta: { requiresAuth: true, roles: ['sysAdmin', 'manager', 'operator'] },
             },
-            // 农资交易
+            // 玉米芯出售
+            {
+                path: '/Grain/CornXinSell',
+                component: () => import('@/views/Grain/CornXinSell.vue'),
+                meta: { requiresAuth: true, roles: ['sysAdmin', 'manager', 'operator'] },
+            },
+
+            // ==============================  农资交易 ================================
             // 农资进货
             {
                 path: '/Nongzi/NongziStock',
@@ -66,7 +79,9 @@ const routes = [
                 component: NongziSellVue,
                 meta: { requiresAuth: true, roles: ['sysAdmin', 'manager', 'operator'] },
             },
-            // 工人管理
+
+
+            // ==============================  工人管理 ================================
             // 出工记录
             {
                 path: '/Worker/WorkerAttendance',
@@ -80,7 +95,8 @@ const routes = [
                 meta: { requiresAuth: true, roles: ['sysAdmin', 'manager'] },
             },
 
-            // 信息维护
+            // ==============================  信息维护 ================================
+
             // 人员信息
             {
                 path: '/Person/PersonInfo',
@@ -93,7 +109,9 @@ const routes = [
                 component: () => import('@/views/Worker/WorkerInfo.vue'),
                 meta: { requiresAuth: true, roles: ['sysAdmin', 'manager'] },
             },
-            // 用户功能
+
+
+            // ==============================  用户功能 ================================
             // 用户信息
             {
                 path: '/User/UserInfo',
