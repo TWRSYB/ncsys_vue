@@ -54,18 +54,12 @@ onMounted(() => {
     // 获取选项
     INIT_getOPT();
     // 获取表设计列表
-    ACT_getTableDesignList();
+    ACT_pageQuery();
 })
 
 const DEALED_TDS_TableDesign = computed(() => {
     // 插入补充字段
-    const newTDS = TDS_TableDesign.value.concat([
-        {
-            columnName: 'sellerName',
-            columnComment: '出售人',
-            type: 'text'
-        }
-    ])
+    const newTDS = TDS_TableDesign.value.concat([])
 
     // 字段排序
     const orderedFields = ['tableId', 'tableName', 'tableComment', 'tableType',
@@ -94,10 +88,10 @@ const FLDTDS_TableDesign = computed(() => {
     return DEALED_TDS_TableDesign.value.filter(field => FLD_field.value.includes(field.columnName))
 })
 
-const ACT_getTableDesignList = () => {
+const ACT_pageQuery = () => {
 
     // 获取表设计列表
-    $Requests.post('/tableDesign/getTableDesignList', QUERY_Main.value)
+    $Requests.post('/tableDesign/pageQuery', QUERY_Main.value)
         .then((response) => {
             if (response.code === 200) {
                 TD_List.value = response.list;
@@ -242,7 +236,7 @@ const SBM_saveTableDesign = () => {
                 if (response.code === 200) {
                     // 保存成功, 刷新列表
                     SHOW_Drawer.value = false
-                    ACT_getTableDesignList()
+                    ACT_pageQuery()
                 }
             })
     })
@@ -276,7 +270,7 @@ const SBM_createTableAndEntity = () => {
                     if (response.code === 200) {
                         // 跳转首页
                         SHOW_Drawer.value = false
-                        ACT_getTableDesignList()
+                        ACT_pageQuery()
                     }
                 })
         })
@@ -302,7 +296,7 @@ const SBM_deleteTableDesign = (row) => {
         $Requests.post('/tableDesign/deleteTableDesign', row, { showSuccessMsg: true })
             .then((response) => {
                 if (response.code === 200) {
-                    ACT_getTableDesignList()
+                    ACT_pageQuery()
                 }
             })
     })
@@ -717,7 +711,7 @@ const SBM_generateTD = () => {
         .then((response) => {
             if (response.code === 200) {
                 DLG_generateTD.value = false
-                ACT_getTableDesignList()
+                ACT_pageQuery()
             }
         })
 }
@@ -764,14 +758,14 @@ const VIT_notExist = () => {
                     </el-icon>
                 </div>
                 <div class="extra">
-                    <!-- <el-button type="primary" @click="ACT_getTableDesignList">刷新</el-button> -->
+                    <!-- <el-button type="primary" @click="ACT_pageQuery">刷新</el-button> -->
                     <el-button type="primary" @click="ACT_addTable">新增表</el-button>
                     <el-button type="primary" @click="ACT_generateTD">从现有表生成表设计</el-button>
                 </div>
             </div>
             <div class="field-filter" v-if="SHOW_fieldFilter" v-click-outside="() => SHOW_fieldFilter = false">
                 <el-checkbox-group v-model="FLD_field" style="display: flex; flex-wrap: wrap;">
-                    <el-checkbox-button v-for="(field, index) in TDS_TableDesign" :key="index"
+                    <el-checkbox-button v-for="(field, index) in DEALED_TDS_TableDesign" :key="index"
                         :value="field.columnName">
                         {{ field.columnComment }}
                     </el-checkbox-button>
@@ -801,7 +795,7 @@ const VIT_notExist = () => {
             </el-form-item>
 
             <el-form-item class="search-btn">
-                <el-button type="primary" @click="ACT_getTableDesignList">搜索</el-button>
+                <el-button type="primary" @click="ACT_pageQuery">搜索</el-button>
                 <el-button @click="FORM_Search.resetFields()">重置</el-button>
             </el-form-item>
         </el-form>
@@ -835,7 +829,7 @@ const VIT_notExist = () => {
 
         <!-- 分页条 -->
         <el-pagination v-model:current-page="QUERY_Main.pageNum" v-model:page-size="QUERY_Main.pageSize"
-            :total="QUERY_Main.total" :page-sizes="[10, 20, 50, 100]" @change="ACT_getTableDesignList"
+            :total="QUERY_Main.total" :page-sizes="[10, 20, 50, 100]" @change="ACT_pageQuery"
             layout="jumper, total, sizes, prev, pager, next" />
 
         <!-- 抽屉 -->

@@ -32,6 +32,13 @@ const routes = [
                 component: () => import('@/views/sys/DbDesign.vue'),
                 meta: { requiresAuth: true, roles: ['sysAdmin'] },
             },
+            // SQL脚本
+            {
+                path: '/sys/SqlScript',
+                component: () => import('@/views/sys/SqlScript.vue'),
+                meta: { requiresAuth: true, roles: ['sysAdmin'] },
+            },
+
 
 
             // ==============================  粮食买卖 ================================

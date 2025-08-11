@@ -155,7 +155,7 @@
 }
 
 
-
+// 打印纸张样式(默认纵向)
 .print-paper {
     width: 200mm;
     height: 287mm;
@@ -164,70 +164,6 @@
     margin: 0 auto;
     background: white;
     box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-
-    .biaoge {
-        .biaoge-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-
-            .biaoge-title {
-                font-size: 16px;
-                font-weight: bold;
-                color: #303133;
-            }
-        }
-
-        .biaoge-contain {
-
-            .biaoge-row {
-                display: flex;
-                width: 100%;
-                height: 10mm;
-                align-items: center;
-                justify-content: space-between;
-                border: 1px solid #ebeef5;
-                margin-bottom: -1px;
-                /* 添加负外边距使边框重叠 */
-
-
-
-                .biaoge-item {
-                    flex-grow: 1;
-                    display: flex;
-                    height: 100%;
-                    align-items: center;
-                    border: 1px solid #ebeef5;
-                    margin: 0 -1px;
-                    /* 添加负外边距使边框重叠 */
-
-                    .label {
-                        min-width: 10mm;
-                        height: 100%;
-                        font-weight: bold;
-                        background-color: #f5f7fa !important;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        padding: 1mm 1.5mm;
-                        box-sizing: border-box;
-                        /* 添加此行 */
-                    }
-
-                    .default {
-                        flex-grow: 1;
-                        min-width: 20mm;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                    }
-                }
-            }
-
-
-        }
-    }
 
     .weigh-table {
         width: 100%;
@@ -271,8 +207,75 @@
     }
 }
 
+
+// 横向打印纸张样式
 .print-paper.landscape {
     width: 287mm !important;
     height: 200mm !important;
+}
+
+// 表格样式
+.biaoge {
+    .biaoge-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+
+        .biaoge-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #303133;
+        }
+    }
+
+    .biaoge-contain {
+
+        .biaoge-row {
+            display: flex;
+            width: 100%;
+            height: 10mm;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #ebeef5;
+            margin-bottom: -1px;
+            /* 添加负外边距使边框重叠 */
+
+
+
+            .biaoge-item {
+                flex-grow: 1;
+                display: flex;
+                height: 100%;
+                align-items: center;
+                border: 1px solid #ebeef5;
+                margin: 0 -1px;
+                /* 添加负外边距使边框重叠 */
+
+                .label {
+                    min-width: 10mm;
+                    height: 100%;
+                    font-weight: bold;
+                    background-color: #f5f7fa !important;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 1mm 1.5mm;
+                    box-sizing: border-box;
+                    /* 添加此行 */
+                }
+
+                .default {
+                    flex-grow: 1;
+                    min-width: 20mm;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+            }
+        }
+
+
+    }
 }
 </style>

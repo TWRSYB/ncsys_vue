@@ -35,7 +35,8 @@ onMounted(() => {
 // 系统设计菜单
 const sysMenuItems = [
     { path: '/sys/UserManage', title: '用户列表', icon: 'SVG_User', allowedRoles: ['sysAdmin'] },
-    { path: '/sys/DbDesign', title: '数据库设计', icon: 'SVG_DataDesign', allowedRoles: ['sysAdmin'] }
+    { path: '/sys/DbDesign', title: '数据库设计', icon: 'SVG_DataDesign', allowedRoles: ['sysAdmin'] },
+    { path: '/sys/SqlScript', title: 'SQL脚本', icon: 'SVG_SqlScript', allowedRoles: ['sysAdmin'] },
 ];
 
 // 粮食买卖菜单
